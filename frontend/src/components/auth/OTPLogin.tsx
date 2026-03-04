@@ -61,9 +61,10 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
             } else {
                 setError(data.message || 'Invalid OTP. Please try again.');
             }
-        } catch (err) {
+        } catch (err: any) {
             setLoading(false);
-            setError('Server error. Please try again later.');
+            console.error('[OTPLogin] Fetch error:', err);
+            setError(`Connection error: ${err.message || 'Check your internet or API URL'}`);
         }
     };
 
