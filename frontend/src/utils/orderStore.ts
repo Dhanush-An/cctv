@@ -68,6 +68,30 @@ const initializeStore = () => {
                 technician: 'Dhanush',
                 paymentStatus: 'Unpaid',
                 type: 'Service'
+            },
+            {
+                id: 'ORD-10922',
+                customerName: 'Hotel Grand',
+                customerEmail: 'admin@hotelgrand.com',
+                items: [{ id: '4', name: '8CH NVR Installation', quantity: 1, price: 45000 }],
+                total: 45000,
+                status: 'Delivered',
+                date: '2024-02-15T09:00:00Z',
+                technician: 'Dhanush',
+                paymentStatus: 'Paid',
+                type: 'Service'
+            },
+            {
+                id: 'ORD-55412',
+                customerName: 'Sarah Connor',
+                customerEmail: 'sarah@skynet.com',
+                items: [{ id: '5', name: 'Smart Lock Setup', quantity: 2, price: 12000 }],
+                total: 24000,
+                status: 'Delivered',
+                date: '2024-02-28T16:20:00Z',
+                technician: 'Dhanush',
+                paymentStatus: 'Paid',
+                type: 'Mixed'
             }
         ];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleOrders));

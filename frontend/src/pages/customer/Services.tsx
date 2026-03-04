@@ -65,8 +65,11 @@ const ServiceCard = ({ svc }: { svc: Service }) => {
                         >
                             <ShoppingCart className="w-5 h-5" />
                         </button>
-                        <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-100 whitespace-nowrap">
-                            Book Now
+                        <button
+                            onClick={handleAddToCart}
+                            className={`px-5 py-2.5 font-bold text-xs rounded-xl transition-all shadow-md whitespace-nowrap ${added ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100'}`}
+                        >
+                            {added ? 'Added!' : 'Book Now'}
                         </button>
                     </div>
                 </div>

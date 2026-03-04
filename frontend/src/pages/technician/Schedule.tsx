@@ -9,7 +9,13 @@ const Schedule = () => {
     const { user: userMobile } = useAuth();
     const [jobs, setJobs] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past'>('Upcoming');
+    const [activeTab, setActiveTab] = useState<'current' | 'past'>('current');
+
+    // Derived lists
+    const currentJobs = jobs.filter(job => job.status !== 'Delivered' && job.status !== 'Refunded' && job.status !== 'Cancelled');
+    const pastJobs = jobs.filter(job => job.status === 'Delivered' || job.status === 'Refunded' || job.status === 'Cancelled');
+
+    const displayJobs = activeTab === 'current' ? currentJobs : pastJobs;
 
     useEffect(() => {
         const loadScheduleData = async () => {
@@ -40,10 +46,10 @@ const Schedule = () => {
 
                     if (!isAssigned) return false;
 
-                    if (activeTab === 'Upcoming') {
-                        return order.status !== 'Delivered' && order.status !== 'Cancelled';
+                    if (activeTab === 'current') { // Changed 'Upcoming' to 'current'
+                        return order.status !== 'Delivered' && order.status !== 'Refunded' && order.status !== 'Cancelled';
                     } else {
-                        return order.status === 'Delivered' || order.status === 'Cancelled';
+                        return order.status === 'Delivered' || order.status === 'Refunded' || order.status === 'Cancelled';
                     }
                 }).reverse();
 
@@ -63,6 +69,13 @@ const Schedule = () => {
         return () => window.removeEventListener('orders-updated', handleOrderUpdate);
     }, [userMobile, activeTab]);
 
+    // Effect to switch to 'past' tab if 'current' is empty but 'past' has jobs
+    useEffect(() => {
+        if (activeTab === 'current' && currentJobs.length === 0 && pastJobs.length > 0) {
+            setActiveTab('past');
+        }
+    }, [activeTab, currentJobs, pastJobs]);
+
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-10">
             {/* Header */}
@@ -71,19 +84,23 @@ const Schedule = () => {
 
                 <div className="relative z-10">
                     <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">My Schedule</h1>
-                    <p className="text-slate-500 font-medium">View and manage your upcoming service appointments.</p>
+                    <p className="text-slate-500 font-medium">
+                        {activeTab === 'current'
+                            ? "View and manage your upcoming service appointments."
+                            : "Review your past completed or cancelled jobs."}
+                    </p>
                 </div>
 
                 <div className="relative z-10 bg-slate-50 p-1.5 rounded-2xl flex border border-slate-200 shadow-inner">
                     <button
-                        onClick={() => setActiveTab('Upcoming')}
-                        className={`px-6 py-2.5 font-black text-sm rounded-xl transition-all ${activeTab === 'Upcoming' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setActiveTab('current')}
+                        className={`px-6 py-2.5 font-black text-sm rounded-xl transition-all ${activeTab === 'current' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         Upcoming
                     </button>
                     <button
-                        onClick={() => setActiveTab('Past')}
-                        className={`px-6 py-2.5 font-bold text-sm rounded-xl transition-all ${activeTab === 'Past' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setActiveTab('past')}
+                        className={`px-6 py-2.5 font-black text-sm rounded-xl transition-all ${activeTab === 'past' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         Past Jobs
                     </button>
@@ -92,23 +109,25 @@ const Schedule = () => {
 
             {loading ? (
                 <div className="p-12 text-center text-slate-400 font-bold animate-pulse">Loading Schedule...</div>
-            ) : jobs.length === 0 ? (
+            ) : displayJobs.length === 0 ? (
                 <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-16 text-center">
                     <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <CheckCircle2 className="w-10 h-10 text-indigo-300" />
                     </div>
                     <h3 className="text-xl font-black text-slate-800 mb-2">Your Schedule is Clear</h3>
                     <p className="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
-                        You have no upcoming service appointments assigned to you at the moment.
+                        {activeTab === 'current'
+                            ? "You have no upcoming service appointments assigned to you at the moment."
+                            : "You have no past service appointments to review."}
                     </p>
                 </div>
             ) : (
-                <div className="relative">
+                <div className="relative space-y-8">
                     {/* Event Timeline Line connecting the cards */}
                     <div className="absolute left-8 md:left-24 top-10 bottom-10 w-px bg-slate-200 hidden md:block" />
 
                     <div className="space-y-8">
-                        {jobs.map((job) => (
+                        {displayJobs.map((job) => (
                             <div key={job.id} className="flex flex-col md:flex-row gap-6 md:gap-12 relative group">
 
                                 {/* Timeline Node (Desktop only) */}
@@ -138,7 +157,10 @@ const Schedule = () => {
 
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
-                                            <span className="inline-block px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 mb-3">
+                                            <span className={`inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border mb-3 ${job.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                job.status === 'Refunded' ? 'bg-slate-50 text-slate-600 border-slate-100' :
+                                                    'bg-amber-50 text-amber-600 border-amber-100'
+                                                }`}>
                                                 {job.status}
                                             </span>
                                             <h3 className="text-xl font-black text-slate-800 tracking-tight leading-snug max-w-lg mb-1">
@@ -178,7 +200,7 @@ const Schedule = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 
