@@ -432,5 +432,25 @@
       "registeredAt": "2026-03-02T11:11:27.578Z",
       "status": "Active"
     }
+  ],
+  "employees": [
+    {
+      "id": "EMP-001",
+      "name": "Dhanush Tamilarasan",
+      "mobile": "6379068722",
+      "email": "dhanush.antigraviity@gmail.com",
+      "address": "36 Harur",
+      "dateOfJoining": "2026-01-21",
+      "status": "Active"
+    },
+    {
+      "id": "EMP-002",
+      "name": "Azhaguvel",
+      "mobile": "7777777777",
+      "email": "azhaguvel.antigraviity@gmail.com",
+      "address": "36 Harur",
+      "dateOfJoining": "2026-02-09",
+      "status": "Active"
+    }
   ]
 }

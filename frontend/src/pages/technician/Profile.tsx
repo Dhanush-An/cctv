@@ -7,19 +7,30 @@ import { Mail, Phone, MapPin, Calendar, Award, Shield, Key } from 'lucide-react'
 const Profile = () => {
     const { user } = useAuth();
     const [employee, setEmployee] = useState<Employee | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const emps = getEmployees();
-        const loggedInEmp = emps.find(e =>
-            (e.email && e.email.toLowerCase() === user?.toLowerCase()) ||
-            e.mobile === user
-        );
-        if (loggedInEmp) {
-            setEmployee(loggedInEmp);
-        }
+        const fetchEmployee = async () => {
+            if (!user) return;
+            try {
+                const emps = await getEmployees();
+                const loggedInEmp = emps.find(e =>
+                    (e.email && e.email.toLowerCase() === user.toLowerCase()) ||
+                    e.mobile === user
+                );
+                if (loggedInEmp) {
+                    setEmployee(loggedInEmp);
+                }
+            } catch (err) {
+                console.error('Error fetching profile:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEmployee();
     }, [user]);
 
-    if (!employee) {
+    if (loading || !employee) {
         return (
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex items-center gap-6 animate-pulse">

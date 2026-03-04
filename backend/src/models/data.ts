@@ -53,6 +53,8 @@ export interface Order {
     technician?: string;
     paymentStatus: 'Paid' | 'Unpaid' | 'Refunded';
     type?: 'Product' | 'Service' | 'Mixed'; // To categorize in Admin
+    startImage?: string;
+    completionImage?: string;
 }
 
 export interface CartItem {

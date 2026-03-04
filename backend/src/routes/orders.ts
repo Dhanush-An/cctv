@@ -1,12 +1,11 @@
 import { Router } from 'express';
-import { getOrders, createOrder, updateOrderStatus, assignTechnician, refundOrder } from '../controllers/ordersController.js';
+import { getOrders, updateOrderStatus, assignTechnician, saveOrderImages } from '../controllers/orderController.js';
 
 const router = Router();
 
 router.get('/', getOrders);
-router.post('/', createOrder);
-router.put('/:id/status', updateOrderStatus);
-router.put('/:id/technician', assignTechnician);
-router.post('/:id/refund', refundOrder);
+router.patch('/:id/status', updateOrderStatus);
+router.patch('/:id/assign', assignTechnician);
+router.patch('/:id/images', saveOrderImages);
 
 export default router;

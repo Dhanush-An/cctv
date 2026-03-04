@@ -24,17 +24,16 @@ export const login = async (req: Request, res: Response) => {
     if (mobile === VALID_CREDENTIALS.admin) {
         role = 'admin';
     } else {
-        // 2. Check Employees (Technicians)
-        const employees = db.employees;
+        const employees = db.employees || [];
+
         const employeeMatch = employees.find(emp => emp.mobile === mobile && emp.status === 'Active');
 
         if (employeeMatch) {
             role = 'technician';
         } else {
-            // 3. Check hardcoded or default to customer
             if (mobile === VALID_CREDENTIALS.technician) role = 'technician';
             else if (mobile === VALID_CREDENTIALS.customer) role = 'customer';
-            else role = 'customer'; // Default for testing
+            else role = 'customer';
         }
     }
 

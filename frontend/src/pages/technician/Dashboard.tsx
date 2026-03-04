@@ -14,40 +14,47 @@ const Dashboard = () => {
     const { user } = useAuth();
     const [jobs, setJobs] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [technicianName, setTechnicianName] = useState<string>('Robert Fox');
+    const [technicianName, setTechnicianName] = useState('');
     const [customers, setCustomers] = useState<RegisteredCustomer[]>([]);
 
     useEffect(() => {
-        const fetchContext = async () => {
+        const fetchDashboardData = async () => {
+            if (!user) return;
             try {
-                // Fetch Technician Name
+                // 1. Get Employee Name
                 const emps = await getEmployees();
-                const loggedInEmp = emps.find(emp =>
-                    (emp.email && emp.email.toLowerCase() === user?.toLowerCase()) ||
-                    emp.mobile === user
+                const current = emps.find(e =>
+                    (e.email && e.email.toLowerCase() === user.toLowerCase()) ||
+                    e.mobile === user
                 );
-                if (loggedInEmp) setTechnicianName(loggedInEmp.name);
 
-                // Fetch Customers for lookup
-                const custs = await getCustomers();
-                setCustomers(custs);
+                const name = current ? current.name : '';
+                setTechnicianName(name);
+
+                // 2. Load Jobs
+                const data = await getOrders();
+                const assigned = data.filter(order =>
+                    order.technician && name &&
+                    order.technician.toLowerCase().trim() === name.toLowerCase().trim()
+                ).reverse();
+                setJobs(assigned);
+
+                // 3. Load Customers
+                const customerData = await getCustomers();
+                setCustomers(customerData);
             } catch (err) {
-                console.error(err);
+                console.error('Error fetching dashboard data:', err);
+            } finally {
+                setLoading(false);
             }
         };
-        fetchContext();
+
+        fetchDashboardData();
     }, [user]);
 
-    useEffect(() => {
-        getOrders().then(data => {
-            const assigned = data.filter(order =>
-                order.technician && technicianName &&
-                order.technician.toLowerCase().trim() === technicianName.toLowerCase().trim()
-            ).reverse();
-            setJobs(assigned);
-            setLoading(false);
-        });
-    }, [technicianName]);
+    if (loading) {
+        return <div className="p-8 text-center text-slate-500">Loading dashboard...</div>;
+    }
 
     // Helpers for calculating metrics
     const today = new Date().toISOString().split('T')[0]; // simple YYYY-MM-DD for matching
