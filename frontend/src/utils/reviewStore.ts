@@ -1,10 +1,13 @@
 export interface Review {
     id: string;
     user: string;
+    customerEmail: string;
     rating: number;
     comment: string;
     type: 'Product' | 'Service';
     target: string;
+    technicianName?: string;
+    orderId?: string;
     status: 'Published' | 'Pending' | 'Flagged' | 'Rejected';
     date: string;
 }
@@ -14,22 +17,39 @@ const STORAGE_KEY = 'cctv_reviews';
 const defaultReviews: Review[] = [
     {
         id: 'REV-001',
-        user: 'Rahul Sharma',
+        user: 'Sarah Jenkins',
+        customerEmail: 'sarah@example.com',
         rating: 5,
-        comment: 'Excellent installation service. The technician was very professional and explained everything clearly.',
+        comment: 'Absolutely fantastic service! The technician was very polite, explained the entire setup to me clearly, and left the workspace totally clean.',
         type: 'Service',
-        target: 'Home Installation',
+        target: 'CCTV Installation - Villa',
+        technicianName: 'Dhanush',
+        orderId: 'ORD-10922',
         status: 'Published',
         date: '10 Mar 2026'
     },
     {
         id: 'REV-002',
-        user: 'Priya Patel',
+        user: 'David Chen',
+        customerEmail: 'david@demo.com',
+        rating: 5,
+        comment: 'Quick and efficient. He identified the issue with the old DVR board right away and had the replacement hooked up incredibly fast.',
+        type: 'Service',
+        target: 'DVR Repair & Setup',
+        technicianName: 'Dhanush',
+        orderId: 'ORD-22341',
+        status: 'Published',
+        date: '11 Mar 2026'
+    },
+    {
+        id: 'REV-003',
+        user: 'Michael Brown',
+        customerEmail: 'mike@example.com',
         rating: 4,
         comment: 'Good camera quality, but the delivery was delayed by a day.',
         type: 'Product',
         target: '4K Dome Camera',
-        status: 'Pending',
+        status: 'Published',
         date: '09 Mar 2026'
     }
 ];

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CalendarDays, DollarSign, CheckCircle2, Star, MapPin } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getOrders } from '../../utils/orderStore';
@@ -9,6 +10,7 @@ import { getCustomers } from '../../utils/customerStore';
 import type { RegisteredCustomer } from '../../utils/customerStore';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [jobs, setJobs] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -169,8 +171,11 @@ const Dashboard = () => {
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-lg font-bold text-slate-800">Assigned Jobs Today</h2>
-                        <button className="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1 rounded-lg transition-colors">
-                            3h All
+                        <button
+                            onClick={() => navigate('/technician/jobs')}
+                            className="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1 rounded-lg transition-colors"
+                        >
+                            View All
                         </button>
                     </div>
                     <div className="space-y-4">
@@ -199,7 +204,10 @@ const Dashboard = () => {
                             </div>
                         ))}
                     </div>
-                    <button className="w-full mt-6 py-3 border border-slate-200 text-indigo-600 font-bold rounded-xl hover:bg-slate-50 transition-all text-sm">
+                    <button
+                        onClick={() => navigate('/technician/jobs')}
+                        className="w-full mt-6 py-3 border border-slate-200 text-indigo-600 font-bold rounded-xl hover:bg-slate-50 transition-all text-sm"
+                    >
                         View All Jobs
                     </button>
                 </div>
@@ -252,7 +260,10 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex gap-4 mt-6">
-                        <button className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-xl transition-all text-sm">
+                        <button
+                            onClick={() => navigate('/technician/earnings')}
+                            className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-xl transition-all text-sm"
+                        >
                             View Details
                         </button>
                         <button className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2">
@@ -279,7 +290,12 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         ))}
-                        <button className="w-full py-2 text-indigo-600 font-bold border border-slate-200 rounded-lg hover:bg-slate-50 text-sm">View All</button>
+                        <button
+                            onClick={() => navigate('/technician/earnings')}
+                            className="w-full py-2 text-indigo-600 font-bold border border-slate-200 rounded-lg hover:bg-slate-50 text-sm"
+                        >
+                            View All
+                        </button>
                     </div>
 
                     <div className="flex-1 space-y-4">

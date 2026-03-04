@@ -1,33 +1,63 @@
 import { Star, MessageSquare } from 'lucide-react';
-
-const mockReviews = [
-    {
-        id: 'REV-001',
-        customerName: 'Sarah Jenkins',
-        serviceName: 'CCTV Installation - Villa',
-        rating: 5,
-        date: '2023-10-24',
-        comment: 'Absolutely fantastic service! The technician was very polite, explained the entire setup to me clearly, and left the workspace totally clean. The cameras are working perfectly and the app was set up on my phone in minutes.',
-    },
-    {
-        id: 'REV-002',
-        customerName: 'David Chen',
-        serviceName: 'DVR Repair & Setup',
-        rating: 5,
-        date: '2023-10-20',
-        comment: 'Quick and efficient. He identified the issue with the old DVR board right away and had the replacement hooked up incredibly fast. Very knowledgeable expert.',
-    },
-    {
-        id: 'REV-003',
-        customerName: 'Michael Brown',
-        serviceName: 'Monthly Maintenance',
-        rating: 4,
-        date: '2023-10-15',
-        comment: 'Good service overall. Was about 15 minutes late due to traffic but called ahead to let me know, which I appreciated. Did a thorough clean of all 8 lenses.',
-    },
-];
+import { useState, useEffect, useMemo } from 'react';
+import { getReviews } from '../../utils/reviewStore';
+import type { Review } from '../../utils/reviewStore';
+import { useAuth } from '../../context/AuthContext';
+import { getEmployees } from '../../utils/employeeStore';
 
 const Reviews = () => {
+    const { user: userMobile } = useAuth();
+    const [allReviews, setAllReviews] = useState<Review[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [techName, setTechName] = useState('Dhanush');
+
+    useEffect(() => {
+        const loadReviews = async () => {
+            try {
+                setLoading(true);
+                const [reviewsData, employees] = await Promise.all([
+                    getReviews(),
+                    Promise.resolve(getEmployees())
+                ]);
+
+                // Match technician identity
+                const currentTech = employees.find(e =>
+                    e.mobile === userMobile ||
+                    (e.email && e.email.toLowerCase() === (userMobile || '').toLowerCase())
+                );
+
+                if (currentTech) {
+                    setTechName(currentTech.name);
+                } else if (userMobile === '6379068722') {
+                    setTechName('Rajesh Kumar');
+                }
+
+                setAllReviews(reviewsData);
+            } catch (err) {
+                console.error("Error loading reviews:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadReviews();
+    }, [userMobile]);
+
+    const myReviews = useMemo(() => {
+        return allReviews.filter(r =>
+            r.status === 'Published' &&
+            r.technicianName?.toLowerCase() === techName.toLowerCase()
+        );
+    }, [allReviews, techName]);
+
+    const stats = useMemo(() => {
+        if (myReviews.length === 0) return { avg: 0, total: 0 };
+        const sum = myReviews.reduce((acc, r) => acc + r.rating, 0);
+        return {
+            avg: (sum / myReviews.length).toFixed(1),
+            total: myReviews.length
+        };
+    }, [myReviews]);
     // Generate star displays
     const renderStars = (rating: number) => {
         return [...Array(5)].map((_, i) => (
@@ -61,13 +91,13 @@ const Reviews = () => {
                 <div className="bg-white rounded-[32px] p-8 shadow-sm flex flex-col items-center justify-center text-center border border-slate-100">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Overall Rating</p>
                     <div className="flex items-end gap-1 mb-3">
-                        <span className="text-5xl font-black text-slate-800 tracking-tighter">4.8</span>
+                        <span className="text-5xl font-black text-slate-800 tracking-tighter">{stats.avg}</span>
                         <span className="text-xl font-bold text-slate-300 pb-1">/5</span>
                     </div>
                     <div className="flex gap-1 mb-2">
-                        {renderStars(5)}
+                        {renderStars(Math.round(Number(stats.avg)))}
                     </div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Based on 124 reviews</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Based on {stats.total} reviews</p>
                 </div>
             </div>
 
@@ -75,38 +105,46 @@ const Reviews = () => {
             <div className="space-y-6">
                 <h3 className="font-black text-slate-800 text-lg px-2">Recent Feedback</h3>
 
-                <div className="grid gap-6">
-                    {mockReviews.map((review) => (
-                        <div key={review.id} className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-6 md:p-8 hover:shadow-md transition-shadow">
-                            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-blue-50 rounded-full flex items-center justify-center text-indigo-600 font-black text-lg shadow-inner border border-white">
-                                        {review.customerName.charAt(0)}
+                {loading ? (
+                    <div className="bg-white rounded-[32px] p-12 text-center text-slate-400 font-bold animate-pulse">Loading Feedback...</div>
+                ) : myReviews.length === 0 ? (
+                    <div className="bg-white rounded-[32px] p-16 text-center border border-slate-100 italic text-slate-400 font-medium">
+                        You don't have any customer reviews yet.
+                    </div>
+                ) : (
+                    <div className="grid gap-6">
+                        {myReviews.map((review) => (
+                            <div key={review.id} className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-6 md:p-8 hover:shadow-md transition-shadow">
+                                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-blue-50 rounded-full flex items-center justify-center text-indigo-600 font-black text-lg shadow-inner border border-white">
+                                            {review.user.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-800">{review.user}</h4>
+                                            <p className="text-xs text-slate-400 font-medium">{review.target}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-800">{review.customerName}</h4>
-                                        <p className="text-xs text-slate-400 font-medium">{review.serviceName}</p>
+                                    <div className="flex flex-col md:items-end gap-2 shrink-0">
+                                        <div className="flex gap-1">
+                                            {renderStars(review.rating)}
+                                        </div>
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{review.date}</p>
                                     </div>
                                 </div>
-                                <div className="flex flex-col md:items-end gap-2 shrink-0">
-                                    <div className="flex gap-1">
-                                        {renderStars(review.rating)}
-                                    </div>
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{review.date}</p>
-                                </div>
-                            </div>
 
-                            <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-50 relative">
-                                <div className="absolute -left-2 -top-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                    <span className="text-xl text-slate-300 leading-none">"</span>
+                                <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-50 relative">
+                                    <div className="absolute -left-2 -top-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                        <span className="text-xl text-slate-300 leading-none">"</span>
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-600 leading-relaxed italic relative z-10">
+                                        {review.comment}
+                                    </p>
                                 </div>
-                                <p className="text-sm font-medium text-slate-600 leading-relaxed italic relative z-10">
-                                    {review.comment}
-                                </p>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

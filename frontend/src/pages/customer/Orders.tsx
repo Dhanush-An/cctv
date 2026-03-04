@@ -1,10 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { CreditCard, ChevronRight, X, Package, Clock, Search, CheckCircle2, Truck, AlertCircle, Filter } from 'lucide-react';
+import { CreditCard, ChevronRight, X, Package, Clock, Search, CheckCircle2, Truck, AlertCircle, Filter, Star } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getOrders, updateOrderPaymentStatus } from '../../utils/orderStore';
 import { getCustomers } from '../../utils/customerStore';
 import { addNotification } from '../../utils/notificationStore';
+import { getReviews, addReview } from '../../utils/reviewStore';
+import type { Review } from '../../utils/reviewStore';
 import type { Order } from '../../utils/orderStore';
 
 const statusConfig: Record<string, { icon: any, color: string, bg: string }> = {
@@ -26,9 +28,22 @@ const CustomerOrders = () => {
     const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<Order | null>(null);
     const [processingPayment, setProcessingPayment] = useState(false);
 
+    // Review States
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [selectedOrderForReview, setSelectedOrderForReview] = useState<Order | null>(null);
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+
     useEffect(() => {
         fetchOrders();
+        fetchReviews();
     }, [user]);
+
+    const fetchReviews = async () => {
+        const data = await getReviews();
+        setReviews(data);
+    };
 
     const fetchOrders = () => {
         setLoading(true);
@@ -52,6 +67,40 @@ const CustomerOrders = () => {
             })
             .catch(console.error)
             .finally(() => setLoading(false));
+    };
+
+    const handleReviewSubmit = async () => {
+        if (!selectedOrderForReview || !user) return;
+        setSubmittingReview(true);
+
+        try {
+            await addReview({
+                user: user.split('@')[0], // Simplified name from email
+                customerEmail: user,
+                rating: reviewRating,
+                comment: reviewComment,
+                type: selectedOrderForReview.type === 'Product' ? 'Product' : 'Service',
+                target: selectedOrderForReview.items.map(i => i.name).join(', '),
+                technicianName: selectedOrderForReview.technician,
+                orderId: selectedOrderForReview.id
+            });
+
+            setSelectedOrderForReview(null);
+            setReviewComment('');
+            setReviewRating(5);
+            fetchReviews();
+
+            await addNotification({
+                userId: user,
+                message: "Thank you for your feedback! Your review is pending moderation.",
+                type: 'System'
+            });
+        } catch (error) {
+            console.error('Review submission failed:', error);
+            alert('Failed to submit review. Please try again.');
+        } finally {
+            setSubmittingReview(false);
+        }
     };
 
     const handlePayment = async () => {
@@ -221,6 +270,23 @@ const CustomerOrders = () => {
                                         <button className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-colors shrink-0">
                                             View Invoice
                                         </button>
+
+                                        {order.status === 'Delivered' && (
+                                            <>
+                                                {reviews.some(r => r.orderId === order.id) ? (
+                                                    <div className="px-5 py-2.5 bg-indigo-50 text-indigo-500 font-bold text-xs rounded-xl shrink-0 flex items-center gap-2 border border-indigo-100">
+                                                        <Star className="w-4 h-4 fill-indigo-400 text-indigo-400" /> Reviewed
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setSelectedOrderForReview(order)}
+                                                        className="px-5 py-2.5 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-black text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-2"
+                                                    >
+                                                        <Star className="w-4 h-4" /> Leave Review
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
                                         {order.status !== 'Cancelled' && (
                                             <button className="px-5 py-2.5 text-slate-500 hover:text-slate-800 font-bold text-xs transition-colors shrink-0 ml-auto">
                                                 Need Help?
@@ -288,7 +354,78 @@ const CustomerOrders = () => {
                 </div>
             )}
 
+            {/* Review Modal */}
+            {selectedOrderForReview && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200 overflow-hidden border border-slate-100">
+                        <div className="flex justify-between items-center p-6 border-b border-slate-50">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-800 tracking-tight">How was your service?</h2>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Order #{selectedOrderForReview.id}</p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedOrderForReview(null)}
+                                className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
+                        <div className="p-8 space-y-8">
+                            <div className="text-center">
+                                <p className="text-sm font-bold text-slate-500 mb-4">Rate your experience</p>
+                                <div className="flex justify-center gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            onClick={() => setReviewRating(star)}
+                                            className="group relative p-1 transition-transform active:scale-90"
+                                        >
+                                            <Star
+                                                className={`w-10 h-10 transition-all ${star <= reviewRating
+                                                    ? 'fill-amber-400 text-amber-400'
+                                                    : 'text-slate-200 hover:text-amber-200'
+                                                    }`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Write your feedback</label>
+                                <textarea
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    placeholder="Tell us what you liked (or what we can improve)..."
+                                    rows={4}
+                                    className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[20px] text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-200 transition-all resize-none shadow-inner"
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    onClick={() => setSelectedOrderForReview(null)}
+                                    className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all"
+                                >
+                                    Not Now
+                                </button>
+                                <button
+                                    onClick={handleReviewSubmit}
+                                    disabled={submittingReview}
+                                    className="flex-[2] py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {submittingReview ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        "Submit My Review"
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
