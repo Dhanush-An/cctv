@@ -68,6 +68,22 @@ if (!localStorage.getItem(STORAGE_KEY)) {
             type: 'System',
             date: new Date().toISOString(),
             read: true
+        },
+        {
+            id: 'NTF-4444',
+            userId: 'customer@demo.com',
+            message: 'Your order #ORD-75923 has been delivered successfully!',
+            type: 'Order',
+            date: new Date().toISOString(),
+            read: false
+        },
+        {
+            id: 'NTF-5555',
+            userId: 'customer@demo.com',
+            message: 'A technician has been assigned to your request.',
+            type: 'System',
+            date: new Date().toISOString(),
+            read: true
         }
     ];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));

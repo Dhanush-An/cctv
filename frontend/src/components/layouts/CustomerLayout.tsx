@@ -1,14 +1,14 @@
 import { Outlet, useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { Bell, LogOut, User, ShoppingBag, CalendarCheck, Heart, ShoppingCart } from 'lucide-react';
+import { LogOut, User, ShoppingBag, CalendarCheck, Heart, ShoppingCart } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getCustomers } from '../../utils/customerStore';
 import { getCartCount } from '../../utils/cartStore';
 import { getOrders, updateOrderPaymentStatus } from '../../utils/orderStore';
 
-import { getNotifications, markAsRead, markAllAsRead, addNotification } from '../../utils/notificationStore';
+import { addNotification } from '../../utils/notificationStore';
 import type { Order } from '../../utils/orderStore';
-import type { Notification } from '../../utils/notificationStore';
+import NotificationDropdown from '../shared/NotificationDropdown';
 
 const CustomerLayout = () => {
     const navigate = useNavigate();
@@ -18,10 +18,7 @@ const CustomerLayout = () => {
     const [cartCount, setCartCount] = useState(0);
     const [displayName, setDisplayName] = useState('Customer');
     const [displayEmail, setDisplayEmail] = useState(user ?? '');
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [showNotifications, setShowNotifications] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const notificationRef = useRef<HTMLDivElement>(null);
 
     // Mandatory Payment Blocker States
     const [blockingOrder, setBlockingOrder] = useState<Order | null>(null);
@@ -71,45 +68,11 @@ const CustomerLayout = () => {
         navigate('/login');
     };
 
-    const fetchNotifications = async () => {
-        if (user) {
-            const data = await getNotifications(user);
-            setNotifications(data);
-        }
-    };
-
-    useEffect(() => {
-        fetchNotifications();
-        window.addEventListener('notifications-updated', fetchNotifications);
-        return () => window.removeEventListener('notifications-updated', fetchNotifications);
-    }, [user]);
-
-    const handleNotificationClick = () => {
-        setShowNotifications(!showNotifications);
-        setProfileOpen(false);
-    };
-
-    const handleMarkAsRead = async (id: string) => {
-        await markAsRead(id);
-        fetchNotifications();
-    };
-
-    const handleMarkAllAsRead = async () => {
-        if (user) {
-            await markAllAsRead(user);
-            fetchNotifications();
-        }
-    };
-
-    const unreadCount = notifications.filter(n => !n.read).length;
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
                 setProfileOpen(false);
-            }
-            if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
-                setShowNotifications(false);
             }
         };
         document.addEventListener('mousedown', handler);
@@ -205,81 +168,7 @@ const CustomerLayout = () => {
                                 </span>
                             )}
                         </button>
-                        <div className="relative" ref={notificationRef}>
-                            <button
-                                onClick={handleNotificationClick}
-                                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all group relative"
-                            >
-                                <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform origin-top" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-                                )}
-                            </button>
-
-                            {showNotifications && (
-                                <div className="absolute right-0 top-full mt-3 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 overflow-hidden">
-                                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                        <h3 className="font-bold text-slate-800 text-sm">Notifications</h3>
-                                        {unreadCount > 0 && (
-                                            <button
-                                                onClick={handleMarkAllAsRead}
-                                                className="text-[10px] font-bold text-indigo-600 hover:underline px-2 py-1"
-                                            >
-                                                Mark all as read
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="max-h-96 overflow-y-auto divide-y divide-slate-50">
-                                        {notifications.length === 0 ? (
-                                            <div className="px-4 py-10 text-center">
-                                                <Bell className="w-8 h-8 text-slate-200 mx-auto mb-3" />
-                                                <p className="text-xs text-slate-400 font-medium">No notifications yet</p>
-                                            </div>
-                                        ) : (
-                                            notifications.map((notification) => (
-                                                <div
-                                                    key={notification.id}
-                                                    onClick={() => handleMarkAsRead(notification.id)}
-                                                    className={`px-4 py-4 hover:bg-slate-50 transition-colors cursor-pointer relative ${!notification.read ? 'bg-indigo-50/30' : ''}`}
-                                                >
-                                                    {!notification.read && (
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />
-                                                    )}
-                                                    <div className="flex gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${notification.type === 'Order' ? 'bg-blue-100 text-blue-600' :
-                                                            notification.type === 'Payment' ? 'bg-emerald-100 text-emerald-600' :
-                                                                notification.type === 'Review' ? 'bg-amber-100 text-amber-600' :
-                                                                    'bg-slate-100 text-slate-600'
-                                                            }`}>
-                                                            {notification.type === 'Order' ? <ShoppingBag className="w-4 h-4" /> :
-                                                                notification.type === 'Payment' ? <ShoppingCart className="w-4 h-4" /> :
-                                                                    notification.type === 'Review' ? <Bell className="w-4 h-4" /> : // Changed from Star to Bell as Star is removed
-                                                                        <Bell className="w-4 h-4" />
-                                                            }
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={`text-xs leading-relaxed ${!notification.read ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}`}>
-                                                                {notification.message}
-                                                            </p>
-                                                            <p className="text-[10px] text-slate-400 mt-1 font-bold italic">
-                                                                {new Date(notification.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                    {notifications.length > 0 && (
-                                        <div className="px-4 py-2 border-t border-slate-100 text-center bg-slate-50/50">
-                                            <button className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest">
-                                                View All History
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        <NotificationDropdown userId={user || 'customer@demo.com'} isWhiteBackground={true} />
 
                         <div className="w-px h-6 bg-slate-100 mx-1" />
 

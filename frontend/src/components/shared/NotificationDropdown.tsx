@@ -84,58 +84,97 @@ const NotificationDropdown = ({ userId, isWhiteBackground = false }: Notificatio
             </button>
 
             {showNotifications && (
-                <div className="absolute right-0 top-full mt-3 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                        <h3 className="font-bold text-slate-800 text-sm">Notifications</h3>
-                        {unreadCount > 0 && (
-                            <button
-                                onClick={handleMarkAllAsRead}
-                                className="text-[10px] font-bold text-indigo-600 hover:underline px-2 py-1"
-                            >
-                                Mark all as read
-                            </button>
-                        )}
-                    </div>
-                    <div className="max-h-96 overflow-y-auto divide-y divide-slate-50">
-                        {notifications.length === 0 ? (
-                            <div className="px-4 py-10 text-center">
-                                <Bell className="w-8 h-8 text-slate-200 mx-auto mb-3" />
-                                <p className="text-xs text-slate-400 font-medium">No notifications yet</p>
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+                        onClick={() => setShowNotifications(false)}
+                    ></div>
+
+                    {/* Popup Window */}
+                    <div className="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-300">
+                        {/* Header */}
+                        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Recent Notifications</h3>
+                                <p className="text-xs text-slate-500 font-medium">Keep track of your latest updates.</p>
                             </div>
-                        ) : (
-                            notifications.map((notification) => (
-                                <div
-                                    key={notification.id}
-                                    onClick={() => handleMarkAsRead(notification.id)}
-                                    className={`px-4 py-4 hover:bg-slate-50 transition-colors cursor-pointer relative ${!notification.read ? 'bg-indigo-50/30' : ''}`}
+                            <div className="flex items-center gap-2">
+                                {unreadCount > 0 && (
+                                    <button
+                                        onClick={handleMarkAllAsRead}
+                                        className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        Mark all as read
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setShowNotifications(false)}
+                                    className="p-2 text-slate-400 hover:bg-white rounded-xl transition-colors shadow-sm bg-slate-100"
                                 >
-                                    {!notification.read && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />
-                                    )}
-                                    <div className="flex gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${getColorClass(notification.type)}`}>
-                                            {getIcon(notification.type)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`text-xs leading-relaxed ${!notification.read ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}`}>
-                                                {notification.message}
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 mt-1 font-bold italic">
-                                                {new Date(notification.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
+                                    <Bell className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* List */}
+                        <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-50 p-2">
+                            {notifications.length === 0 ? (
+                                <div className="py-20 text-center">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                        <Bell className="w-8 h-8 text-slate-200" />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-slate-800">All Quiet Here</h4>
+                                    <p className="text-xs text-slate-400 font-medium max-w-[180px] mx-auto mt-1">
+                                        No recent notifications found in your inbox.
+                                    </p>
+                                </div>
+                            ) : (
+                                notifications.map((notification) => (
+                                    <div
+                                        key={notification.id}
+                                        onClick={() => handleMarkAsRead(notification.id)}
+                                        className={`m-2 p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer relative group ${!notification.read ? 'bg-indigo-50/20' : ''}`}
+                                    >
+                                        {!notification.read && (
+                                            <div className="absolute left-0 top-4 bottom-4 w-1 bg-indigo-500 rounded-full" />
+                                        )}
+                                        <div className="flex gap-4">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${getColorClass(notification.type)}`}>
+                                                {getIcon(notification.type)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start mb-0.5">
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${notification.type === 'Order' ? 'text-blue-500' :
+                                                            notification.type === 'Payment' ? 'text-emerald-500' :
+                                                                'text-amber-500'
+                                                        }`}>
+                                                        {notification.type}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-bold italic">
+                                                        {new Date(notification.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                                <p className={`text-sm leading-relaxed ${!notification.read ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}`}>
+                                                    {notification.message}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                    {notifications.length > 0 && (
-                        <div className="px-4 py-2 border-t border-slate-100 text-center bg-slate-50/50">
-                            <button className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest">
-                                View History
+                                ))
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-slate-100 bg-white">
+                            <button
+                                onClick={() => setShowNotifications(false)}
+                                className="w-full py-3 bg-slate-900 text-white font-bold rounded-2xl text-sm hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
+                            >
+                                Close Window
                             </button>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
         </div>
