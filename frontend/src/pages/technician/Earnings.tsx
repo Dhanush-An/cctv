@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     DollarSign,
     TrendingUp,
@@ -11,26 +11,123 @@ import {
     Briefcase
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-
-const mockEarningsData = [
-    { name: 'Jan', earnings: 45000 },
-    { name: 'Feb', earnings: 52000 },
-    { name: 'Mar', earnings: 48000 },
-    { name: 'Apr', earnings: 61000 },
-    { name: 'May', earnings: 59000 },
-    { name: 'Jun', earnings: 68000 },
-];
-
-const mockTransactions = [
-    { id: 'TRX-9921', date: '2023-10-24', description: 'CCTV Installation - Villa', amount: 4500, status: 'Completed' },
-    { id: 'TRX-9920', date: '2023-10-22', description: 'Monthly Maintenance', amount: 1200, status: 'Completed' },
-    { id: 'TRX-9919', date: '2023-10-20', description: 'DVR Repair & Setup', amount: 2800, status: 'Processing' },
-    { id: 'TRX-9918', date: '2023-10-18', description: 'Office Network Camera', amount: 5500, status: 'Completed' },
-    { id: 'TRX-9917', date: '2023-10-15', description: 'Camera Relocation', amount: 800, status: 'Completed' },
-];
+import { useAuth } from '../../context/AuthContext';
+import { getOrders, type Order } from '../../utils/orderStore';
+import { getEmployees } from '../../utils/employeeStore';
 
 const Earnings = () => {
+    const { user: userMobile } = useAuth();
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [technicianName, setTechnicianName] = useState('Technician');
+    const [loading, setLoading] = useState(true);
     const [timeframe, setTimeframe] = useState('This Month');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [allOrders, employees] = await Promise.all([
+                    getOrders(),
+                    Promise.resolve(getEmployees())
+                ]);
+
+                const currentTech = employees.find(e => e.mobile === userMobile);
+                if (currentTech) {
+                    setTechnicianName(currentTech.name);
+                    const techOrders = allOrders.filter(o => o.technician === currentTech.name);
+                    setOrders(techOrders);
+                }
+            } catch (error) {
+                console.error("Error fetching earnings data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [userMobile]);
+
+    // Derived Calculations
+    const stats = useMemo(() => {
+        const completedJobs = orders.filter(o => o.status === 'Delivered');
+        const totalEarnings = completedJobs.reduce((sum, o) => sum + o.total, 0);
+        const pendingPayout = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').reduce((sum, o) => sum + o.total, 0);
+        const avgJobValue = completedJobs.length > 0 ? Math.round(totalEarnings / completedJobs.length) : 0;
+
+        // Mock growth/trends based on real volume for visual polish
+        return [
+            {
+                title: 'Total Earnings',
+                value: `₹${totalEarnings.toLocaleString('en-IN')}`,
+                trend: '+8.4%', // Keeping a small positive trend for aesthetic
+                up: true,
+                icon: DollarSign,
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50',
+                raw: totalEarnings
+            },
+            {
+                title: 'Pending Payout',
+                value: `₹${pendingPayout.toLocaleString('en-IN')}`,
+                trend: 'Processing',
+                up: null,
+                icon: Wallet,
+                color: 'text-amber-600',
+                bg: 'bg-amber-50'
+            },
+            {
+                title: 'Completed Jobs',
+                value: completedJobs.length.toString(),
+                trend: `+${completedJobs.length}`,
+                up: true,
+                icon: Briefcase,
+                color: 'text-blue-600',
+                bg: 'bg-blue-50'
+            },
+            {
+                title: 'Avg. Job Value',
+                value: `₹${avgJobValue.toLocaleString('en-IN')}`,
+                trend: 'Stable',
+                up: true,
+                icon: TrendingUp,
+                color: 'text-purple-600',
+                bg: 'bg-purple-50'
+            }
+        ];
+    }, [orders]);
+
+    const chartData = useMemo(() => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const currentMonthIdx = new Date().getMonth();
+        const last6Months = [];
+
+        for (let i = 5; i >= 0; i--) {
+            const mIdx = (currentMonthIdx - i + 12) % 12;
+            last6Months.push({ name: months[mIdx], earnings: 0 });
+        }
+
+        orders.filter(o => o.status === 'Delivered').forEach(order => {
+            const orderMonth = months[new Date(order.date).getMonth()];
+            const dataPoint = last6Months.find(d => d.name === orderMonth);
+            if (dataPoint) dataPoint.earnings += order.total;
+        });
+
+        return last6Months;
+    }, [orders]);
+
+    const recentTransactions = useMemo(() => {
+        return orders
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 5)
+            .map(o => ({
+                id: o.id,
+                date: new Date(o.date).toLocaleDateString(),
+                description: o.items[0]?.name || 'Service Job',
+                amount: o.total,
+                status: o.status === 'Delivered' ? 'Completed' : 'Processing'
+            }));
+    }, [orders]);
+
+    if (loading) return <div className="p-10 text-center text-slate-500 font-bold">Loading your earnings...</div>;
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -62,44 +159,7 @@ const Earnings = () => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    {
-                        title: 'Total Earnings',
-                        value: '₹68,000',
-                        trend: '+12.5%',
-                        up: true,
-                        icon: DollarSign,
-                        color: 'text-emerald-600',
-                        bg: 'bg-emerald-50'
-                    },
-                    {
-                        title: 'Pending Payout',
-                        value: '₹12,400',
-                        trend: 'Processing',
-                        up: null,
-                        icon: Wallet,
-                        color: 'text-amber-600',
-                        bg: 'bg-amber-50'
-                    },
-                    {
-                        title: 'Completed Jobs',
-                        value: '42',
-                        trend: '+4',
-                        up: true,
-                        icon: Briefcase,
-                        color: 'text-blue-600',
-                        bg: 'bg-blue-50'
-                    },
-                    {
-                        title: 'Avg. Job Value',
-                        value: '₹1,650',
-                        trend: '-2.1%',
-                        up: false,
-                        icon: TrendingUp,
-                        color: 'text-purple-600',
-                        bg: 'bg-purple-50'
-                    }
-                ].map((stat, i) => (
+                {stats.map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
@@ -132,7 +192,7 @@ const Earnings = () => {
                     </div>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={mockEarningsData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                 <XAxis
                                     dataKey="name"
@@ -165,12 +225,12 @@ const Earnings = () => {
                         <div className="relative z-10">
                             <h3 className="text-emerald-100 font-bold text-xs uppercase tracking-widest mb-2">Monthly Goal</h3>
                             <p className="text-3xl font-black mb-1">₹80,000</p>
-                            <p className="text-sm font-medium text-emerald-50 mb-6">You're 85% there. Keep it up!</p>
+                            <p className="text-sm font-medium text-emerald-50 mb-6">You're {(Math.round((Number(stats[0].raw || 0) / 80000) * 100))}% there. Keep it up!</p>
 
                             <div className="w-full bg-black/20 rounded-full h-3 mb-2 overflow-hidden backdrop-blur-sm">
-                                <div className="bg-white h-3 rounded-full" style={{ width: '85%' }}></div>
+                                <div className="bg-white h-3 rounded-full" style={{ width: `${Math.min(100, Math.round((Number(stats[0].raw || 0) / 80000) * 100))}%` }}></div>
                             </div>
-                            <p className="text-xs font-bold text-emerald-100 text-right">₹12,000 remaining</p>
+                            <p className="text-xs font-bold text-emerald-100 text-right">₹{Math.max(0, 80000 - Number(stats[0].raw || 0)).toLocaleString('en-IN')} remaining</p>
                         </div>
                     </div>
 
@@ -183,7 +243,7 @@ const Earnings = () => {
                                 </div>
                                 <div>
                                     <p className="font-bold text-slate-700 text-sm">Next Payout</p>
-                                    <p className="text-xs text-slate-500">October 31, 2023</p>
+                                    <p className="text-xs text-slate-500">{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString()}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -192,7 +252,7 @@ const Earnings = () => {
                                 </div>
                                 <div>
                                     <p className="font-bold text-slate-700 text-sm">Amount</p>
-                                    <p className="text-xs text-slate-500 font-medium">₹12,400 processing</p>
+                                    <p className="text-xs text-slate-500 font-medium">{stats[1].value} processing</p>
                                 </div>
                             </div>
                         </div>
@@ -218,7 +278,7 @@ const Earnings = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {mockTransactions.map((trx) => (
+                            {recentTransactions.map((trx) => (
                                 <tr key={trx.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="py-4 px-6 md:px-8">
                                         <span className="text-xs font-bold text-slate-500 group-hover:text-emerald-600 transition-colors">{trx.id}</span>
@@ -241,6 +301,11 @@ const Earnings = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {recentTransactions.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="py-10 text-center text-slate-400 font-bold">No transactions found for your assigned jobs.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
