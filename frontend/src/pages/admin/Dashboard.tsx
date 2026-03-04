@@ -8,24 +8,28 @@ import SalesOverview from '../../components/ui/SalesOverview';
 import { getOrders, type Order } from '../../utils/orderStore';
 import { getEmployees, type Employee } from '../../utils/employeeStore';
 import { getContactMessages, type ContactMessage } from '../../utils/contactStore';
+import { getCustomers, type RegisteredCustomer } from '../../utils/customerStore';
 
 const Dashboard = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [messages, setMessages] = useState<ContactMessage[]>([]);
+    const [customers, setCustomers] = useState<RegisteredCustomer[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [ordersData, employeesData, messagesData] = await Promise.all([
+                const [ordersData, employeesData, messagesData, customersData] = await Promise.all([
                     getOrders(),
-                    Promise.resolve(getEmployees()), // getEmployees is synchronous from localStorage but keeping pattern
-                    getContactMessages()
+                    Promise.resolve(getEmployees()),
+                    getContactMessages(),
+                    getCustomers()
                 ]);
                 setOrders(ordersData);
                 setEmployees(employeesData);
                 setMessages(messagesData);
+                setCustomers(customersData);
             } catch (error) {
                 console.error("Error fetching dashboard data", error);
             } finally {
@@ -86,10 +90,16 @@ const Dashboard = () => {
             if (order.status === 'Shipped') statusColor = 'bg-indigo-100 text-indigo-600';
             if (order.status === 'Delivered') statusColor = 'bg-emerald-100 text-emerald-600';
 
+            const customerMatch = customers.find(c =>
+                c.email.toLowerCase() === order.customerEmail.toLowerCase() ||
+                c.mobile === order.customerEmail ||
+                c.name === order.customerName
+            );
+
             return {
                 id: order.id,
                 product: order.items.map(i => i.name).join(', ').substring(0, 25) + '...',
-                client: order.customerName,
+                client: customerMatch ? customerMatch.name : (order.customerName || 'Guest'),
                 amount: `₹${order.total}`,
                 status: order.status,
                 statusColor
