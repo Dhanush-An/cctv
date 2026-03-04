@@ -29,8 +29,54 @@ const notifySync = () => {
     window.dispatchEvent(new Event('orders-updated'));
 };
 
+// Initialize with sample orders for testing/demo if empty
+const initializeStore = () => {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+        const sampleOrders: Order[] = [
+            {
+                id: 'ORD-75923',
+                customerName: 'John Doe',
+                customerEmail: 'john@example.com',
+                items: [{ id: '1', name: 'CCTV Camera Install', quantity: 1, price: 15000 }],
+                total: 15000,
+                status: 'Delivered',
+                date: '2024-03-01T10:00:00Z',
+                technician: 'Dhanush',
+                paymentStatus: 'Paid',
+                type: 'Service'
+            },
+            {
+                id: 'ORD-82145',
+                customerName: 'Alice Smith',
+                customerEmail: 'alice@example.com',
+                items: [{ id: '2', name: 'Security System Maintenance', quantity: 1, price: 12000 }],
+                total: 12000,
+                status: 'Delivered',
+                date: '2024-03-02T14:30:00Z',
+                technician: 'Rajesh Kumar',
+                paymentStatus: 'Paid',
+                type: 'Service'
+            },
+            {
+                id: 'ORD-22341',
+                customerName: 'Tech Hub',
+                customerEmail: 'tech@hub.in',
+                items: [{ id: '3', name: 'Dvr Repair', quantity: 1, price: 8000 }],
+                total: 8000,
+                status: 'Processing',
+                date: new Date().toISOString(),
+                technician: 'Dhanush',
+                paymentStatus: 'Unpaid',
+                type: 'Service'
+            }
+        ];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleOrders));
+    }
+};
+
 export const getOrders = async (): Promise<Order[]> => {
     try {
+        initializeStore();
         const data = localStorage.getItem(STORAGE_KEY);
         if (!data) return [];
         const parsed = JSON.parse(data);

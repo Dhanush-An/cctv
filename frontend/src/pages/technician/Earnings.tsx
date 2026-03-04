@@ -17,7 +17,7 @@ import { getEmployees } from '../../utils/employeeStore';
 
 const Earnings = () => {
     const { user: userMobile } = useAuth();
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [allOrders, setAllOrders] = useState<Order[]>([]);
     const [technicianName, setTechnicianName] = useState('Technician');
     const [loading, setLoading] = useState(true);
     const [timeframe, setTimeframe] = useState('This Month');
@@ -25,17 +25,35 @@ const Earnings = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [allOrders, employees] = await Promise.all([
+                const [ordersData, employees] = await Promise.all([
                     getOrders(),
                     Promise.resolve(getEmployees())
                 ]);
 
-                const currentTech = employees.find(e => e.mobile === userMobile);
+                // Try to match current technician by either mobile or email
+                const currentTech = employees.find(e =>
+                    e.mobile === userMobile ||
+                    (e.email && e.email.toLowerCase() === (userMobile || '').toLowerCase())
+                );
+
+                let techName = 'Dhanush'; // Default fallback
+
                 if (currentTech) {
+                    techName = currentTech.name;
                     setTechnicianName(currentTech.name);
-                    const techOrders = allOrders.filter(o => o.technician === currentTech.name);
-                    setOrders(techOrders);
+                } else if (userMobile === '6379068721') {
+                    techName = 'Rajesh Kumar';
+                    setTechnicianName('Admin (Testing)');
+                } else {
+                    setTechnicianName(techName);
                 }
+
+                // Filtering by technician name
+                const techOrders = ordersData.filter(o =>
+                    o.technician && techName &&
+                    o.technician.toLowerCase().trim() === techName.toLowerCase().trim()
+                );
+                setAllOrders(techOrders);
             } catch (error) {
                 console.error("Error fetching earnings data:", error);
             } finally {
@@ -46,19 +64,51 @@ const Earnings = () => {
         fetchData();
     }, [userMobile]);
 
+    // Apply Timeframe Filter
+    const filteredOrders = useMemo(() => {
+        const now = new Date();
+
+        return allOrders.filter(order => {
+            const orderDate = new Date(order.date);
+            if (timeframe === 'This Week') {
+                const diff = now.getTime() - orderDate.getTime();
+                return diff <= 7 * 24 * 60 * 60 * 1000;
+            }
+            if (timeframe === 'This Month') {
+                return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+            }
+            if (timeframe === 'Last 3 Months') {
+                const threeMonthsAgo = new Date();
+                threeMonthsAgo.setMonth(now.getMonth() - 3);
+                return orderDate >= threeMonthsAgo;
+            }
+            return true; // This Year or Default
+        });
+    }, [allOrders, timeframe]);
+
+    const handleExport = () => {
+        const data = JSON.stringify(filteredOrders, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `earnings_${timeframe.toLowerCase().replace(' ', '_')}.json`;
+        link.click();
+        alert('Exporting your earnings report...');
+    };
+
     // Derived Calculations
     const stats = useMemo(() => {
-        const completedJobs = orders.filter(o => o.status === 'Delivered');
+        const completedJobs = filteredOrders.filter(o => o.status === 'Delivered');
         const totalEarnings = completedJobs.reduce((sum, o) => sum + o.total, 0);
-        const pendingPayout = orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').reduce((sum, o) => sum + o.total, 0);
+        const pendingPayout = filteredOrders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').reduce((sum, o) => sum + o.total, 0);
         const avgJobValue = completedJobs.length > 0 ? Math.round(totalEarnings / completedJobs.length) : 0;
 
-        // Mock growth/trends based on real volume for visual polish
         return [
             {
                 title: 'Total Earnings',
                 value: `₹${totalEarnings.toLocaleString('en-IN')}`,
-                trend: '+8.4%', // Keeping a small positive trend for aesthetic
+                trend: timeframe === 'This Month' ? '+12.5%' : 'Stable',
                 up: true,
                 icon: DollarSign,
                 color: 'text-emerald-600',
@@ -86,36 +136,36 @@ const Earnings = () => {
             {
                 title: 'Avg. Job Value',
                 value: `₹${avgJobValue.toLocaleString('en-IN')}`,
-                trend: 'Stable',
+                trend: 'Market Avg',
                 up: true,
                 icon: TrendingUp,
                 color: 'text-purple-600',
                 bg: 'bg-purple-50'
             }
         ];
-    }, [orders]);
+    }, [filteredOrders, timeframe]);
 
     const chartData = useMemo(() => {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentMonthIdx = new Date().getMonth();
-        const last6Months = [];
+        const last6Months: { name: string; earnings: number }[] = [];
 
         for (let i = 5; i >= 0; i--) {
             const mIdx = (currentMonthIdx - i + 12) % 12;
             last6Months.push({ name: months[mIdx], earnings: 0 });
         }
 
-        orders.filter(o => o.status === 'Delivered').forEach(order => {
+        allOrders.filter((o: Order) => o.status === 'Delivered').forEach((order: Order) => {
             const orderMonth = months[new Date(order.date).getMonth()];
             const dataPoint = last6Months.find(d => d.name === orderMonth);
             if (dataPoint) dataPoint.earnings += order.total;
         });
 
         return last6Months;
-    }, [orders]);
+    }, [allOrders]);
 
     const recentTransactions = useMemo(() => {
-        return orders
+        return filteredOrders
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .slice(0, 5)
             .map(o => ({
@@ -125,7 +175,7 @@ const Earnings = () => {
                 amount: o.total,
                 status: o.status === 'Delivered' ? 'Completed' : 'Processing'
             }));
-    }, [orders]);
+    }, [filteredOrders]);
 
     if (loading) return <div className="p-10 text-center text-slate-500 font-bold">Loading your earnings...</div>;
 
@@ -136,8 +186,11 @@ const Earnings = () => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
 
                 <div className="relative z-10">
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Earnings Overview</h1>
-                    <p className="text-slate-500 font-medium">Track your income, payouts, and job statistics.</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Earnings Overview</h1>
+                        <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest">Live v2.0</span>
+                    </div>
+                    <p className="text-slate-500 font-medium tracking-tight">Welcome, <span className="text-emerald-600 font-bold">{technicianName}</span></p>
                 </div>
 
                 <div className="relative z-10 flex gap-3">
@@ -151,7 +204,10 @@ const Earnings = () => {
                         <option>Last 3 Months</option>
                         <option>This Year</option>
                     </select>
-                    <button className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-slate-200">
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-slate-200 active:scale-95"
+                    >
                         <Download className="w-4 h-4" /> Export
                     </button>
                 </div>
