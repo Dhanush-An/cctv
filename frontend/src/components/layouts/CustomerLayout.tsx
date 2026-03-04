@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { LogOut, User, ShoppingBag, CalendarCheck, Heart, ShoppingCart } from 'lucide-react';
+import { LogOut, User, ShoppingBag, Heart, ShoppingCart } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getCustomers } from '../../utils/customerStore';
@@ -200,7 +200,6 @@ const CustomerLayout = () => {
                                         {[
                                             { icon: User, label: 'My Profile', to: '/customer/profile' },
                                             { icon: ShoppingBag, label: 'My Orders', to: '/customer/orders' },
-                                            { icon: CalendarCheck, label: 'My Bookings', to: '/customer/bookings' },
                                             { icon: Heart, label: 'Wishlist', to: '/customer/wishlist' },
                                         ].map(({ icon: Icon, label, to }) => (
                                             <NavLink

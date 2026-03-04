@@ -32,7 +32,6 @@ import CartPage from './pages/customer/Cart';
 import CustomerServices from './pages/customer/Services';
 import CustomerProfile from './pages/customer/Profile';
 import CustomerOrders from './pages/customer/Orders';
-import CustomerBookings from './pages/customer/Bookings';
 import WishlistPage from './pages/customer/Wishlist';
 import ContactPage from './pages/customer/Contact';
 
@@ -109,7 +108,6 @@ function App() {
             <Route path="services" element={<CustomerServices />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="orders" element={<CustomerOrders />} />
-            <Route path="bookings" element={<CustomerBookings />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="profile" element={<CustomerProfile />} />
