@@ -3,6 +3,10 @@ import { Star, ShoppingCart, Eye, Search, SlidersHorizontal, Camera, X, IndianRu
 import { getProducts, SYNC_CHANNEL } from '../utils/dataStore';
 import type { Product } from '../utils/dataStore';
 import { addToCart } from '../utils/cartStore';
+import { addToWishlist, removeFromWishlist, isInWishlist } from '../utils/wishlistStore';
+import { useAuth } from '../context/AuthContext';
+import { Heart } from 'lucide-react';
+
 
 const CATEGORIES = ['All Products', 'IP Cameras', 'Analog Cameras', 'Storage', 'Cables & PWR'];
 
@@ -330,6 +334,27 @@ const ProductCatalog = ({ onBuyNow, compact = false, title, subtitle }: Props) =
 
 /* ─── Product Card ─── */
 const ProductCard = ({ product, onBuyNow, onViewDetails }: { product: Product; onBuyNow?: (p: Product) => void; onViewDetails?: (p: Product) => void }) => {
+    const { user } = useAuth();
+    const [wishlisted, setWishlisted] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            isInWishlist(product.id, user).then(setWishlisted);
+        }
+    }, [user, product.id]);
+
+    const toggleWishlist = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user) return alert('Please login to use wishlist');
+        if (wishlisted) {
+            await removeFromWishlist(product.id, user);
+            setWishlisted(false);
+        } else {
+            await addToWishlist(product.id, user);
+            setWishlisted(true);
+        }
+    };
+
     const displayPrice = product.offerPrice ?? product.price;
     const hasOffer = !!product.offerPrice;
     const [added, setAdded] = useState(false);
@@ -360,6 +385,12 @@ const ProductCard = ({ product, onBuyNow, onViewDetails }: { product: Product; o
                     <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md">SALE</span>
                 )}
                 <span className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">{product.category}</span>
+                <button
+                    onClick={toggleWishlist}
+                    className={`absolute top-2 right-12 p-1.5 rounded-lg shadow-sm transition-all ${wishlisted ? 'bg-rose-500 text-white' : 'bg-white/90 backdrop-blur-sm text-slate-400 hover:text-rose-500'}`}
+                >
+                    <Heart className={`w-3.5 h-3.5 ${wishlisted ? 'fill-current' : ''}`} />
+                </button>
             </div>
             <div className="p-4">
                 <h3 className="font-bold text-slate-800 text-sm leading-tight mb-0.5 truncate">{product.name}</h3>

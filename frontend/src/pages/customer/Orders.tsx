@@ -1,7 +1,10 @@
+
 import { useState, useEffect } from 'react';
-import { Package, Clock, Filter, Search, ChevronRight, CheckCircle2, Truck, AlertCircle } from 'lucide-react';
+import { CreditCard, ChevronRight, X, Package, Clock, Search, CheckCircle2, Truck, AlertCircle, Filter } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getOrders } from '../../utils/orderStore';
+import { getOrders, updateOrderPaymentStatus } from '../../utils/orderStore';
+import { getCustomers } from '../../utils/customerStore';
+import { addNotification } from '../../utils/notificationStore';
 import type { Order } from '../../utils/orderStore';
 
 const statusConfig: Record<string, { icon: any, color: string, bg: string }> = {
@@ -19,23 +22,67 @@ const CustomerOrders = () => {
     const [filter, setFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        // Fetch all orders from backend
-        // Note: For now we'll fetch all and filter client side. In prod, backend should filter by customer email
-        getOrders()
-            .then(data => {
-                // For demo logic: 'Demo Customer' or 'john@example.com' owns all orders temporarily on this local setup
-                // In production, we'd filter tightly: `data.filter(o => o.customerEmail === user)`
-                const myOrders = ['john@example.com', 'customer@demo.com'].includes(user || '')
-                    ? data
-                    : data.filter(o => o.customerEmail.toLowerCase() === (user || '').toLowerCase());
+    // Modal States
+    const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<Order | null>(null);
+    const [processingPayment, setProcessingPayment] = useState(false);
 
-                // Sort by date descending (assuming string format parses nicely or just reverse array for now)
+    useEffect(() => {
+        fetchOrders();
+    }, [user]);
+
+    const fetchOrders = () => {
+        setLoading(true);
+        Promise.all([
+            getOrders(),
+            getCustomers()
+        ])
+            .then(([orderData, customerData]) => {
+
+                const myProfile = customerData.find(c => c.email.toLowerCase() === (user || '').toLowerCase() || c.mobile === user);
+                const userIdentities = [(user || '').toLowerCase()];
+                if (myProfile) {
+                    userIdentities.push(myProfile.email.toLowerCase());
+                    userIdentities.push(myProfile.mobile);
+                }
+
+                const myOrders = ['john@example.com', 'customer@demo.com'].includes(user || '')
+                    ? orderData
+                    : orderData.filter(o => userIdentities.includes(o.customerEmail.toLowerCase()));
                 setOrders(myOrders.reverse());
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [user]);
+    };
+
+    const handlePayment = async () => {
+        if (!selectedOrderForPayment) return;
+        setProcessingPayment(true);
+
+        try {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            await updateOrderPaymentStatus(selectedOrderForPayment.id, 'Paid');
+
+            const completedOrder = selectedOrderForPayment;
+            setSelectedOrderForPayment(null);
+            fetchOrders(); // Refresh local list
+
+            await addNotification({
+                userId: user || 'customer@demo.com',
+                message: `Payment for Order #${completedOrder.id.slice(-4)} successful!`,
+                type: 'Payment'
+            });
+
+        } catch (error) {
+            console.error('Payment failed:', error);
+            alert('Payment failed. Please try again.');
+        } finally {
+            setProcessingPayment(false);
+        }
+    };
+
+
 
     const filteredOrders = orders.filter(order => {
         const matchesFilter = filter === 'All' || order.status === filter;
@@ -158,15 +205,23 @@ const CustomerOrders = () => {
 
                                     {/* Action row */}
                                     <div className="mt-6 pt-5 border-t border-slate-50 flex flex-wrap items-center gap-3">
-                                        {order.status === 'Delivered' && (
-                                            <button className="px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-colors shrink-0">
-                                                Write a Review
+                                        {order.paymentStatus === 'Unpaid' ? (
+                                            <button
+                                                onClick={() => setSelectedOrderForPayment(order)}
+                                                className="px-5 py-2.5 bg-[#10B981] hover:bg-emerald-600 text-white font-black text-xs rounded-xl transition-all shadow-md shadow-emerald-100 shrink-0 flex items-center gap-2"
+                                            >
+                                                <CreditCard className="w-4 h-4" /> Pay Now
                                             </button>
+                                        ) : (
+                                            <div className="px-5 py-2.5 bg-slate-100 text-slate-500 font-bold text-xs rounded-xl shrink-0 flex items-center gap-2 border border-slate-200/50">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Paid
+                                            </div>
                                         )}
+
                                         <button className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-colors shrink-0">
                                             View Invoice
                                         </button>
-                                        {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
+                                        {order.status !== 'Cancelled' && (
                                             <button className="px-5 py-2.5 text-slate-500 hover:text-slate-800 font-bold text-xs transition-colors shrink-0 ml-auto">
                                                 Need Help?
                                             </button>
@@ -178,6 +233,62 @@ const CustomerOrders = () => {
                     })}
                 </div>
             )}
+
+            {/* Payment Modal */}
+            {selectedOrderForPayment && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200 overflow-hidden">
+
+                        {/* Header */}
+                        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                            <h2 className="text-[17px] font-bold text-slate-800">Complete Your Payment</h2>
+                            <button
+                                onClick={() => setSelectedOrderForPayment(null)}
+                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            {/* Amount Display */}
+                            <div className="flex items-center justify-center py-4 mb-2 border-b border-slate-100">
+                                <span className="text-slate-600 font-medium mr-2">Amount to Pay:</span>
+                                <span className="text-xl font-black text-slate-800">
+                                    ₹{selectedOrderForPayment.total.toLocaleString('en-IN')}
+                                </span>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-4 mt-6">
+                                <button
+                                    onClick={() => setSelectedOrderForPayment(null)}
+                                    className="flex-1 py-3 bg-slate-500 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors shrink-0"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handlePayment}
+                                    disabled={processingPayment}
+                                    className="flex-[1.5] relative py-3 bg-[#1A56DB] hover:bg-blue-700 text-white font-bold rounded-xl overflow-hidden group transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
+                                    {processingPayment ? (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                                            <span>Processing...</span>
+                                        </div>
+                                    ) : (
+                                        "Pay Now"
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
         </div>
     );
 };

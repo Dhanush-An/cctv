@@ -5,19 +5,36 @@ import { getOrders } from '../../utils/orderStore';
 import type { Order } from '../../utils/orderStore';
 import { useAuth } from '../../context/AuthContext';
 import { getEmployees } from '../../utils/employeeStore';
+import { getCustomers } from '../../utils/customerStore';
+import type { RegisteredCustomer } from '../../utils/customerStore';
 
 const Dashboard = () => {
     const { user } = useAuth();
     const [jobs, setJobs] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [technicianName, setTechnicianName] = useState<string>('Robert Fox');
+    const [customers, setCustomers] = useState<RegisteredCustomer[]>([]);
 
-    // Get real name
-    const employees = getEmployees();
-    const loggedInEmployee = employees.find(emp =>
-        (emp.email && emp.email.toLowerCase() === user?.toLowerCase()) ||
-        emp.mobile === user
-    );
-    const technicianName = loggedInEmployee ? loggedInEmployee.name : 'Robert Fox';
+    useEffect(() => {
+        const fetchContext = async () => {
+            try {
+                // Fetch Technician Name
+                const emps = await getEmployees();
+                const loggedInEmp = emps.find(emp =>
+                    (emp.email && emp.email.toLowerCase() === user?.toLowerCase()) ||
+                    emp.mobile === user
+                );
+                if (loggedInEmp) setTechnicianName(loggedInEmp.name);
+
+                // Fetch Customers for lookup
+                const custs = await getCustomers();
+                setCustomers(custs);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchContext();
+    }, [user]);
 
     useEffect(() => {
         getOrders().then(data => {
@@ -59,10 +76,14 @@ const Dashboard = () => {
         }
     });
 
+    const getCustomerInfo = (email: string) => {
+        return customers.find(c => c.email.toLowerCase() === email.toLowerCase());
+    };
+
     const recentEarnings = completedJobs.slice(0, 3).map(job => ({
         id: job.id,
         type: (job.items && Array.isArray(job.items) && job.items.length > 0) ? job.items.map(i => i.name).join(', ') : 'Service',
-        customer: job.customerName || 'Unknown',
+        customer: getCustomerInfo(job.customerEmail)?.name || job.customerName || 'Unknown',
         amount: job.total || 0,
         time: job.date ? new Date(job.date).toLocaleDateString() : 'Unknown'
     }));
@@ -157,11 +178,16 @@ const Dashboard = () => {
                             <div key={job.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-indigo-100 transition-colors group">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                                        {job.customerName.charAt(0)}
+                                        {(getCustomerInfo(job.customerEmail)?.name || job.customerName || 'U').charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-slate-800">{job.customerName}</p>
-                                        <p className="text-xs font-semibold text-slate-500">{job.items && Array.isArray(job.items) && job.items.length > 0 ? job.items[0].name : 'Service'} <span className="ml-2 font-black text-slate-800">{job.date ? new Date(job.date).toLocaleDateString() : ''}</span></p>
+                                        <p className="font-bold text-slate-800">
+                                            {getCustomerInfo(job.customerEmail)?.name || job.customerName}
+                                        </p>
+                                        <p className="text-xs font-semibold text-slate-500">
+                                            {job.items && Array.isArray(job.items) && job.items.length > 0 ? job.items[0].name : 'Service'}
+                                            <span className="ml-2 font-black text-slate-800">{job.date ? new Date(job.date).toLocaleDateString() : ''}</span>
+                                        </p>
                                     </div>
                                 </div>
                                 <button className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm ${job.status === 'Processing' ? 'bg-indigo-600 text-white hover:bg-indigo-700' :

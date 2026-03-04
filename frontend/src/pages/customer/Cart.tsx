@@ -5,6 +5,7 @@ import { getCart, removeFromCart, updateCartQuantity, clearCart } from '../../ut
 import type { CartItem } from '../../utils/cartStore';
 import { getOrders, createOrder } from '../../utils/orderStore';
 import { getEmployees } from '../../utils/employeeStore';
+import { addNotification } from '../../utils/notificationStore';
 import { useAuth } from '../../context/AuthContext';
 
 const CartPage = () => {
@@ -49,8 +50,7 @@ const CartPage = () => {
         return sum + (isNaN(price) ? 0 : price) * (isNaN(qty) ? 1 : qty);
     }, 0);
     const shippingFee = safeItems.length > 0 ? 50 : 0;
-    const couponDiscount = safeItems.length > 0 ? 700 : 0; // Static for demo as in reference
-    const total = subtotal + shippingFee - couponDiscount;
+    const total = subtotal + shippingFee;
 
     const handleBuyNow = async () => {
         if (safeItems.length === 0) return;
@@ -108,6 +108,11 @@ const CartPage = () => {
             });
 
             if (order) {
+                await addNotification({
+                    userId: user || 'customer@demo.com',
+                    message: `Order #${order.id.slice(-4)} placed successfully!`,
+                    type: 'Order'
+                });
                 await clearCart();
                 setItems([]);
                 setShowSuccess(true);
@@ -263,19 +268,6 @@ const CartPage = () => {
                                     <span className="font-medium text-slate-500">Shipping Fee</span>
                                     <span className="font-black text-slate-800">₹{shippingFee}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="font-medium text-slate-500">Coupon Code</span>
-                                    <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-full text-blue-600 font-bold text-[11px] uppercase tracking-wider border border-blue-50">
-                                        SAVE10
-                                    </div>
-                                    <span className="font-black text-slate-800">₹{couponDiscount}</span>
-                                </div>
-                            </div>
-
-                            {/* Coupon Applied Message */}
-                            <div className="bg-emerald-50 rounded-2xl p-4 flex justify-between items-center mb-8 border border-emerald-100">
-                                <span className="text-[11px] font-bold text-emerald-700">Coupon 'SAVE10' applied</span>
-                                <span className="bg-white text-emerald-600 font-black text-[11px] px-2 py-0.5 rounded-lg shadow-sm border border-emerald-50">₹700</span>
                             </div>
 
                             <div className="pt-6 border-t border-slate-100 flex justify-between items-end mb-8">

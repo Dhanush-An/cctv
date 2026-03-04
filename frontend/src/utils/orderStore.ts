@@ -53,7 +53,7 @@ export const createOrder = async (orderData: Partial<Order>): Promise<Order | nu
             status: orderData.status || 'Pending',
             date: orderData.date || new Date().toISOString(),
             technician: orderData.technician,
-            paymentStatus: orderData.paymentStatus || 'Paid',
+            paymentStatus: orderData.paymentStatus || 'Unpaid',
             type: orderData.type
         };
         orders.push(newOrder);
@@ -78,6 +78,22 @@ export const updateOrderStatus = async (id: string, status: Order['status']): Pr
         return orders[index];
     } catch (error) {
         console.error('Error updating status:', error);
+        return null;
+    }
+};
+
+export const updateOrderPaymentStatus = async (id: string, paymentStatus: Order['paymentStatus']): Promise<Order | null> => {
+    try {
+        const orders = await getOrders();
+        const index = orders.findIndex(o => o.id === id);
+        if (index === -1) return null;
+
+        orders[index].paymentStatus = paymentStatus;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        notifySync();
+        return orders[index];
+    } catch (error) {
+        console.error('Error updating payment status:', error);
         return null;
     }
 };

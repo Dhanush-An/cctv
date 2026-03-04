@@ -24,9 +24,12 @@ const Header = () => {
                     />
                 </div>
 
-                <button className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all">
-                    <Bell className="w-6 h-6" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                <button
+                    onClick={() => { }}
+                    className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all group"
+                >
+                    <Bell className="w-6 h-6 group-hover:rotate-12 transition-transform origin-top" />
+                    <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                 </button>
             </div>
         </header>

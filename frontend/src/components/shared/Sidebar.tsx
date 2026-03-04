@@ -11,14 +11,15 @@ import {
     ChevronDown,
     Camera,
     MapPin,
-    LogOut
+    LogOut,
+    MessageSquare
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
     const location = useLocation();
-    const { logout } = useAuth();
+    const { role, logout } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -46,8 +47,10 @@ const Sidebar = () => {
         { icon: MapPin, label: 'Area & Branch', path: '/admin/branches' },
         { icon: CreditCard, label: 'Payments', path: '/admin/payments' },
         { icon: Star, label: 'Reviews', path: '/admin/reviews' },
+        { icon: MessageSquare, label: 'Contact Us', path: '/admin/messages' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
     ];
+
 
 
     return (
@@ -89,26 +92,29 @@ const Sidebar = () => {
             </nav>
 
             {/* Fixed Footer */}
-            <div className="p-4 border-t border-slate-800 shrink-0 space-y-2">
-                <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-3">
-                    <img
-                        src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
-                        alt="Admin"
-                        className="w-10 h-10 rounded-full border-2 border-slate-700"
-                    />
-                    <div>
-                        <p className="text-sm font-semibold text-white">Admin</p>
-                        <p className="text-xs text-slate-500">Super Admin</p>
+            <div className="p-4 shrink-0">
+                <div className="bg-white rounded-[2rem] p-2 flex items-center justify-between shadow-sm border border-slate-100/50">
+                    <div className="flex items-center gap-3 ml-1">
+                        <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-black text-xl">
+                            A
+                        </div>
+                        <div>
+                            <p className="text-sm font-black text-slate-900 leading-tight">Admin</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                                {role === 'admin' ? 'Super Admin' : role || 'User'}
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={handleLogout}
+                        className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all mr-1 group/logout"
+                        title="Logout"
+                    >
+                        <LogOut className="w-5 h-5 opacity-60 group-hover/logout:opacity-100 transition-opacity" />
+                    </button>
                 </div>
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
-                >
-                    <LogOut className="w-5 h-5" />
-                    <span className="font-medium text-sm">Logout</span>
-                </button>
             </div>
+
         </div>
     );
 

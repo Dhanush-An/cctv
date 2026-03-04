@@ -1,24 +1,31 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, Calendar, Users, HardHat, TrendingUp, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { DollarSign, Calendar, Users, HardHat, TrendingUp, MessageSquare, Clock, User } from 'lucide-react';
+
+
 import StatCard from '../../components/ui/StatCard';
 import SalesOverview from '../../components/ui/SalesOverview';
 import { getOrders, type Order } from '../../utils/orderStore';
 import { getEmployees, type Employee } from '../../utils/employeeStore';
+import { getContactMessages, type ContactMessage } from '../../utils/contactStore';
 
 const Dashboard = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
+    const [messages, setMessages] = useState<ContactMessage[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [ordersData, employeesData] = await Promise.all([
+                const [ordersData, employeesData, messagesData] = await Promise.all([
                     getOrders(),
-                    Promise.resolve(getEmployees()) // getEmployees is synchronous from localStorage but keeping pattern
+                    Promise.resolve(getEmployees()), // getEmployees is synchronous from localStorage but keeping pattern
+                    getContactMessages()
                 ]);
                 setOrders(ordersData);
                 setEmployees(employeesData);
+                setMessages(messagesData);
             } catch (error) {
                 console.error("Error fetching dashboard data", error);
             } finally {
@@ -28,6 +35,7 @@ const Dashboard = () => {
 
         fetchData();
     }, []);
+
 
     if (loading) {
         return <div className="p-8 text-center text-slate-500">Loading dashboard data...</div>;
@@ -220,35 +228,49 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="card">
+                <div className="card h-full">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-bold text-slate-800">Customer Reviews</h3>
-                        <button className="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-all">View All</button>
+                        <h3 className="font-bold text-slate-800">Recent Messages</h3>
+                        <Link to="/admin/messages" className="text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-all">View All</Link>
                     </div>
                     <div className="space-y-4">
-                        {[
-                            { author: 'John D.', text: 'Great service, very fast installation!', rating: 5 },
-                            { author: 'Sarah L.', text: 'Camera quality is excellent.', rating: 5 },
-                            { author: 'Mike W.', text: 'Technician was very professional.', rating: 5 },
-                        ].map((review, i) => (
-                            <div key={i} className="p-4 bg-slate-50 rounded-2xl">
+                        {messages.slice(0, 3).map((msg) => (
+                            <Link
+                                key={msg.id}
+                                to="/admin/messages"
+                                className="block p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md transition-all group"
+                            >
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-bold text-slate-800">{review.author}</span>
-                                    <div className="flex items-center gap-0.5">
-                                        {Array.from({ length: review.rating }).map((_, starIndex) => (
-                                            <Star key={starIndex} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                        ))}
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                            <User className="w-4 h-4" />
+                                        </div>
+                                        <span className="text-sm font-bold text-slate-800">{msg.name}</span>
                                     </div>
-
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${msg.status === 'New' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'
+                                        }`}>
+                                        {msg.status}
+                                    </span>
                                 </div>
-                                <p className="text-xs text-slate-600 line-clamp-1 italic">"{review.text}"</p>
-                            </div>
+                                <h4 className="text-xs font-bold text-slate-700 truncate mb-1">{msg.subject}</h4>
+                                <div className="flex items-center justify-between mt-3 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(msg.date).toLocaleDateString()}</span>
+                                    <span className="group-hover:text-indigo-600 transition-colors">Reply →</span>
+                                </div>
+                            </Link>
                         ))}
+                        {messages.length === 0 && (
+                            <div className="py-12 text-center">
+                                <MessageSquare className="w-8 h-8 text-slate-200 mx-auto mb-3" />
+                                <p className="text-sm text-slate-400">No recent messages.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+
 
 export default Dashboard;

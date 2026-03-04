@@ -6,35 +6,29 @@ import {
     Package,
     Wrench
 } from 'lucide-react';
-import { useState } from 'react';
-
-interface Review {
-    id: string;
-    user: string;
-    rating: number;
-    comment: string;
-    type: 'Product' | 'Service';
-    target: string;
-    status: 'Published' | 'Pending' | 'Flagged' | 'Rejected';
-    date: string;
-}
-
-const mockReviews: Review[] = [];
+import { useState, useEffect } from 'react';
+import { getReviews, updateReviewStatus } from '../../utils/reviewStore';
+import type { Review } from '../../utils/reviewStore';
 
 const Reviews = () => {
-    const [reviews, setReviews] = useState(mockReviews);
+    const [reviews, setReviews] = useState<Review[]>([]);
 
-    const updateStatus = (id: string, newStatus: Review['status']) => {
-        setReviews(reviews.map(r => r.id === id ? { ...r, status: newStatus } : r));
+    useEffect(() => {
+        getReviews().then(setReviews);
+    }, []);
+
+    const updateStatus = async (id: string, newStatus: Review['status']) => {
+        const updated = await updateReviewStatus(id, newStatus);
+        setReviews(updated);
     };
 
     const getStatusColor = (status: Review['status']) => {
         switch (status) {
-            case 'Published': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-            case 'Pending': return 'bg-amber-50 text-amber-600 border-amber-100';
-            case 'Flagged': return 'bg-rose-50 text-rose-600 border-rose-100';
-            case 'Rejected': return 'bg-slate-50 text-slate-500 border-slate-100';
-            default: return 'bg-slate-50 text-slate-500 border-slate-100';
+            case 'Published': return 'bg-emerald-50 text-emerald-600';
+            case 'Pending': return 'bg-amber-50 text-amber-600 border border-amber-100';
+            case 'Flagged': return 'bg-rose-50 text-rose-600 border border-rose-100';
+            case 'Rejected': return 'bg-slate-50 text-slate-500 border border-slate-100';
+            default: return 'bg-slate-50 text-slate-500 border border-slate-100';
         }
     };
 
@@ -79,13 +73,13 @@ const Reviews = () => {
                     <div key={review.id} className="card group hover:border-indigo-200 transition-all border border-slate-100">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                             <div className="flex gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 italic font-bold">
+                                <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 italic font-bold shrink-0">
                                     {review.user.split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-3">
                                         <h3 className="font-bold text-slate-800">{review.user}</h3>
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusColor(review.status)}`}>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusColor(review.status)}`}>
                                             {review.status}
                                         </span>
                                     </div>
@@ -100,7 +94,7 @@ const Reviews = () => {
                                     <p className="text-sm text-slate-600 mt-3 leading-relaxed italic">"{review.comment}"</p>
 
                                     <div className="flex items-center gap-4 mt-6">
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-100 w-fit">
                                             {review.type === 'Product' ? <Package className="w-3.5 h-3.5 text-indigo-500" /> : <Wrench className="w-3.5 h-3.5 text-sky-500" />}
                                             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-none">{review.target}</span>
                                         </div>
@@ -112,7 +106,7 @@ const Reviews = () => {
                                 {review.status !== 'Published' && (
                                     <button
                                         onClick={() => updateStatus(review.id, 'Published')}
-                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all border border-emerald-100"
+                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-emerald-100 transition-all border border-emerald-100"
                                     >
                                         <CheckCircle2 className="w-4 h-4" />
                                         Approve
@@ -121,7 +115,7 @@ const Reviews = () => {
                                 {review.status !== 'Flagged' && review.status !== 'Rejected' && (
                                     <button
                                         onClick={() => updateStatus(review.id, 'Flagged')}
-                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-amber-100 transition-all border border-amber-100"
+                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-amber-100 transition-all border border-amber-100"
                                     >
                                         <Flag className="w-4 h-4" />
                                         Flag
@@ -129,7 +123,7 @@ const Reviews = () => {
                                 )}
                                 <button
                                     onClick={() => updateStatus(review.id, 'Rejected')}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-rose-100 transition-all border border-rose-100"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-rose-50 text-rose-600 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-rose-100 transition-all border border-rose-100"
                                 >
                                     <XCircle className="w-4 h-4" />
                                     Reject

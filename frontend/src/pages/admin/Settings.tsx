@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react';
 import { Shield, Key, Users, AlertCircle, Edit2, Check, X } from 'lucide-react';
 import { getEmployees, updateEmployee } from '../../utils/employeeStore';
+import { getSystemCredentials, updateSystemCredentials, type SystemStore } from '../../utils/systemStore';
 import type { Employee } from '../../utils/employeeStore';
 
 const Settings = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
+    const [systemCreds, setSystemCreds] = useState<SystemStore | null>(null);
+
+    // Employee editing state
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState({ email: '', mobile: '' });
 
+    // System credentials editing state
+    const [editingType, setEditingType] = useState<'admin' | 'technician' | null>(null);
+    const [systemEditForm, setSystemEditForm] = useState({ email: '', password: '' });
+
     useEffect(() => {
         setEmployees(getEmployees());
+        setSystemCreds(getSystemCredentials());
+
+        const handler = () => setSystemCreds(getSystemCredentials());
+        window.addEventListener('system-credentials-updated', handler);
+        return () => window.removeEventListener('system-credentials-updated', handler);
     }, []);
 
     const startEdit = (emp: Employee) => {
@@ -27,6 +40,17 @@ const Settings = () => {
             setEmployees(prev => prev.map(e => e.id === id ? updated : e));
         }
         setEditingId(null);
+    };
+
+    const startSystemEdit = (type: 'admin' | 'technician') => {
+        if (!systemCreds) return;
+        setEditingType(type);
+        setSystemEditForm({ ...systemCreds[type] });
+    };
+
+    const saveSystemEdit = (type: 'admin' | 'technician') => {
+        updateSystemCredentials(type, systemEditForm);
+        setEditingType(null);
     };
 
     return (
@@ -51,34 +75,105 @@ const Settings = () => {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="p-4 border border-slate-100 rounded-2xl hover:border-indigo-100 hover:shadow-md transition-all">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Admin Login</h3>
+                        {/* Admin Section */}
+                        <div className="p-4 border border-slate-100 rounded-2xl hover:border-indigo-100 hover:shadow-md transition-all group">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Admin Login</h3>
+                                {editingType === 'admin' ? (
+                                    <div className="flex gap-2">
+                                        <button onClick={() => saveSystemEdit('admin')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                                            <Check className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setEditingType(null)} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button onClick={() => startSystemEdit('admin')} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
                                     <span className="text-sm font-medium text-slate-500">Email</span>
-                                    <span className="font-mono font-bold text-slate-800 text-sm">admin@cctv.com</span>
+                                    {editingType === 'admin' ? (
+                                        <input
+                                            type="email"
+                                            value={systemEditForm.email}
+                                            onChange={e => setSystemEditForm({ ...systemEditForm, email: e.target.value })}
+                                            className="w-48 text-right bg-white border border-indigo-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        />
+                                    ) : (
+                                        <span className="font-mono font-bold text-slate-800 text-sm">{systemCreds?.admin.email}</span>
+                                    )}
                                 </div>
                                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
                                     <span className="text-sm font-medium text-slate-500">Password</span>
-                                    <span className="font-mono font-bold text-slate-800 text-sm">admin123</span>
+                                    {editingType === 'admin' ? (
+                                        <input
+                                            type="text"
+                                            value={systemEditForm.password}
+                                            onChange={e => setSystemEditForm({ ...systemEditForm, password: e.target.value })}
+                                            className="w-48 text-right bg-white border border-indigo-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        />
+                                    ) : (
+                                        <span className="font-mono font-bold text-slate-800 text-sm">{systemCreds?.admin.password}</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-4 border border-slate-100 rounded-2xl hover:border-indigo-100 hover:shadow-md transition-all">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Demo Technician Info</h3>
+                        {/* Tech Section */}
+                        <div className="p-4 border border-slate-100 rounded-2xl hover:border-indigo-100 hover:shadow-md transition-all group">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Demo Technician Info</h3>
+                                {editingType === 'technician' ? (
+                                    <div className="flex gap-2">
+                                        <button onClick={() => saveSystemEdit('technician')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                                            <Check className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setEditingType(null)} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button onClick={() => startSystemEdit('technician')} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
                                     <span className="text-sm font-medium text-slate-500">Email</span>
-                                    <span className="font-mono font-bold text-slate-800 text-sm">tech@cctv.com</span>
+                                    {editingType === 'technician' ? (
+                                        <input
+                                            type="email"
+                                            value={systemEditForm.email}
+                                            onChange={e => setSystemEditForm({ ...systemEditForm, email: e.target.value })}
+                                            className="w-48 text-right bg-white border border-indigo-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        />
+                                    ) : (
+                                        <span className="font-mono font-bold text-slate-800 text-sm">{systemCreds?.technician.email}</span>
+                                    )}
                                 </div>
                                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
                                     <span className="text-sm font-medium text-slate-500">Password</span>
-                                    <span className="font-mono font-bold text-slate-800 text-sm">tech123</span>
+                                    {editingType === 'technician' ? (
+                                        <input
+                                            type="text"
+                                            value={systemEditForm.password}
+                                            onChange={e => setSystemEditForm({ ...systemEditForm, password: e.target.value })}
+                                            className="w-48 text-right bg-white border border-indigo-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        />
+                                    ) : (
+                                        <span className="font-mono font-bold text-slate-800 text-sm">{systemCreds?.technician.password}</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
+
 
                     <div className="mt-6 flex gap-2 items-start p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-800 text-sm">
                         <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />

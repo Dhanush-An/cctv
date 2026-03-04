@@ -3,7 +3,9 @@ import { getOrders, updateOrderStatus, saveOrderImages } from '../../utils/order
 import type { Order } from '../../utils/orderStore';
 import { useAuth } from '../../context/AuthContext';
 import { getEmployees } from '../../utils/employeeStore';
-import { Clock, MapPin, Truck, CheckCircle2, User as UserIcon, ImagePlus, X, Upload, MoreVertical, ShoppingCart } from 'lucide-react';
+import { getCustomers } from '../../utils/customerStore';
+import type { RegisteredCustomer } from '../../utils/customerStore';
+import { Clock, MapPin, Truck, CheckCircle2, User as UserIcon, ImagePlus, X, Upload, MoreVertical, ShoppingCart, Phone } from 'lucide-react';
 
 const Jobs = () => {
     const { user } = useAuth();
@@ -13,6 +15,7 @@ const Jobs = () => {
     const [stagedImage, setStagedImage] = useState<string | null>(null);
     const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
     const [pendingStatus, setPendingStatus] = useState<Order['status']>('Pending');
+    const [customers, setCustomers] = useState<RegisteredCustomer[]>([]);
 
     // Get real name
     const [technicianName, setTechnicianName] = useState<string>('');
@@ -38,6 +41,9 @@ const Jobs = () => {
             }
         };
         fetchEmployee();
+
+        // Fetch all customers for lookup
+        getCustomers().then(setCustomers);
     }, [user]);
 
     useEffect(() => {
@@ -58,39 +64,31 @@ const Jobs = () => {
 
         const handleOrderUpdate = () => loadJobs();
         window.addEventListener('orderUpdated', handleOrderUpdate);
-        return () => window.removeEventListener('orderUpdated', handleOrderUpdate);
+        window.addEventListener('orders-updated', handleOrderUpdate);
+        return () => {
+            window.removeEventListener('orderUpdated', handleOrderUpdate);
+            window.removeEventListener('orders-updated', handleOrderUpdate);
+        };
     }, [technicianName]);
 
+    const getCustomerInfo = (email: string) => {
+        return customers.find(c => c.email.toLowerCase() === email.toLowerCase());
+    };
+
     const handleStatusUpdate = async (orderId: string, currentStatus: string) => {
-        // Simple state machine for technician jobs
+        // Simple state machine for technician jobs: Pending -> Processing -> Delivered
         let nextStatus: Order['status'] = 'Processing';
-        if (currentStatus === 'Pending') nextStatus = 'Processing'; // Admin sets to Pending. Tech starts work -> Processing
-        else if (currentStatus === 'Processing') nextStatus = 'Shipped'; // Using shipped as 'En Route' or 'In Progress' for tech
-        else if (currentStatus === 'Shipped') nextStatus = 'Delivered';  // Using delivered as 'Completed'
+        if (currentStatus === 'Pending') nextStatus = 'Processing';
+        else if (currentStatus === 'Processing') nextStatus = 'Delivered';
 
         if (currentStatus === 'Delivered') return;
 
-        // If moving from Pending -> Processing, require a start image
-        if (currentStatus === 'Pending' || currentStatus === 'Processing') {
-            setActiveImageJobId(orderId);
-            setPendingStatus(nextStatus);
-            setStagedImage(null);
-            return;
-        }
-
-        // If moving to Delivered (Completed), require an end image
-        if (nextStatus === 'Delivered') {
-            setActiveImageJobId(orderId);
-            setPendingStatus(nextStatus);
-            setStagedImage(null);
-            return;
-        }
-
-        // Direct fallback:
-        const updated = await updateOrderStatus(orderId, nextStatus);
-        if (updated) {
-            setJobs(prev => prev.map(job => job.id === orderId ? updated : job));
-        }
+        // Transitions requiring images:
+        // 1. Pending -> Processing (Start of work)
+        // 2. Processing -> Delivered (Completion of work)
+        setActiveImageJobId(orderId);
+        setPendingStatus(nextStatus);
+        setStagedImage(null);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,9 +106,11 @@ const Jobs = () => {
         if (!activeImageJobId || !stagedImage) return;
 
         // 1. Save the image to the order
-        if (pendingStatus === 'Processing' || pendingStatus === 'Shipped') {
+        if (pendingStatus === 'Processing') {
+            // "Before" photo
             await saveOrderImages(activeImageJobId, stagedImage, undefined);
         } else if (pendingStatus === 'Delivered') {
+            // "After" photo
             await saveOrderImages(activeImageJobId, undefined, stagedImage);
         }
 
@@ -176,8 +176,13 @@ const Jobs = () => {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Customer details</p>
-                                                <p className="text-sm font-bold text-slate-700">{job.customerName}</p>
-                                                <p className="text-xs text-slate-500">{job.customerEmail}</p>
+                                                <p className="text-sm font-bold text-slate-700">
+                                                    {getCustomerInfo(job.customerEmail)?.name || job.customerName}
+                                                </p>
+                                                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                                    <Phone className="w-3 h-3 text-indigo-400" />
+                                                    {getCustomerInfo(job.customerEmail)?.mobile || 'Login ID: ' + job.customerEmail}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-start gap-3">
@@ -289,8 +294,8 @@ const Jobs = () => {
                             <h2 className="text-xl font-black text-slate-800 mb-1">Upload Work Photo</h2>
                             <p className="text-sm font-medium text-slate-500 max-w-[250px] mx-auto leading-relaxed">
                                 {pendingStatus === 'Delivered'
-                                    ? 'Please provide a clear photo of the completed work to mark it as Delivered.'
-                                    : 'Please provide a clear workspace photo to mark this job as In Progress.'}
+                                    ? 'Provide a photo of the completed work to finish this job.'
+                                    : 'Provide a photo of the workspace to start your work.'}
                             </p>
                         </div>
 
@@ -368,8 +373,13 @@ const Jobs = () => {
                                         Customer Info
                                     </h3>
                                     <div className="space-y-1">
-                                        <p className="font-bold text-slate-800">{viewingOrder.customerName}</p>
-                                        <p className="text-sm text-slate-500 italic">{viewingOrder.customerEmail}</p>
+                                        <p className="font-bold text-slate-800">
+                                            {getCustomerInfo(viewingOrder.customerEmail)?.name || viewingOrder.customerName}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-sm text-slate-500 italic">
+                                            <Phone className="w-3 h-3 text-indigo-400" />
+                                            {getCustomerInfo(viewingOrder.customerEmail)?.mobile || viewingOrder.customerEmail}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="space-y-4">

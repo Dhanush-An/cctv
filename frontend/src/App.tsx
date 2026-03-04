@@ -15,6 +15,8 @@ import Reviews from './pages/admin/Reviews';
 import Customers from './pages/admin/Customers';
 import Employees from './pages/admin/Employees';
 import Settings from './pages/admin/Settings';
+import AdminContacts from './pages/admin/Contacts';
+
 
 import TechnicianLayout from './components/layouts/TechnicianLayout';
 import TechnicianDashboard from './pages/technician/Dashboard';
@@ -31,6 +33,10 @@ import CustomerServices from './pages/customer/Services';
 import CustomerProfile from './pages/customer/Profile';
 import CustomerOrders from './pages/customer/Orders';
 import CustomerBookings from './pages/customer/Bookings';
+import WishlistPage from './pages/customer/Wishlist';
+import ContactPage from './pages/customer/Contact';
+
+
 
 import LandingPage from './pages/LandingPage';
 
@@ -67,7 +73,9 @@ function App() {
             <Route path="reviews" element={<Reviews />} />
             <Route path="customers" element={<Customers />} />
             <Route path="employees" element={<Employees />} />
+            <Route path="messages" element={<AdminContacts />} />
             <Route path="settings" element={<Settings />} />
+
           </Route>
 
           {/* Technician Routes (Protected) */}
@@ -102,8 +110,10 @@ function App() {
             <Route path="cart" element={<CartPage />} />
             <Route path="orders" element={<CustomerOrders />} />
             <Route path="bookings" element={<CustomerBookings />} />
-            <Route path="wishlist" element={<div className="text-2xl font-bold text-slate-800 p-4">Wishlist</div>} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="contact" element={<ContactPage />} />
             <Route path="profile" element={<CustomerProfile />} />
+
           </Route>
         </Routes>
       </BrowserRouter>
