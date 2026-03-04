@@ -6,57 +6,62 @@ import { getEmployees } from '../../utils/employeeStore';
 import { useAuth } from '../../context/AuthContext';
 
 const Schedule = () => {
-    const { user } = useAuth();
+    const { user: userMobile } = useAuth();
     const [jobs, setJobs] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past'>('Upcoming');
 
-    const [technicianName, setTechnicianName] = useState<string>('');
-
-    // Fetch matching technician
     useEffect(() => {
-        const fetchEmployee = async () => {
+        const loadScheduleData = async () => {
             try {
-                const emps = await getEmployees();
-                const loggedInEmp = emps.find(e =>
-                    (e.email && e.email.toLowerCase() === user?.toLowerCase()) ||
-                    e.mobile === user
+                setLoading(true);
+                const [ordersData, employees] = await Promise.all([
+                    getOrders(),
+                    Promise.resolve(getEmployees())
+                ]);
+
+                // Match technician identity
+                const currentTech = employees.find(e =>
+                    e.mobile === userMobile ||
+                    (e.email && e.email.toLowerCase() === (userMobile || '').toLowerCase())
                 );
-                if (loggedInEmp) {
-                    setTechnicianName(loggedInEmp.name);
-                } else {
-                    setLoading(false);
+
+                let techName = 'Dhanush'; // Default fallback
+                if (currentTech) {
+                    techName = currentTech.name;
+                } else if (userMobile === '6379068722') {
+                    techName = 'Rajesh Kumar';
                 }
+
+                // Filter by technician and active tab
+                const filtered = ordersData.filter(order => {
+                    const isAssigned = order.technician && techName &&
+                        order.technician.toLowerCase().trim() === techName.toLowerCase().trim();
+
+                    if (!isAssigned) return false;
+
+                    if (activeTab === 'Upcoming') {
+                        return order.status !== 'Delivered' && order.status !== 'Cancelled';
+                    } else {
+                        return order.status === 'Delivered' || order.status === 'Cancelled';
+                    }
+                }).reverse();
+
+                setJobs(filtered);
             } catch (err) {
-                console.error(err);
+                console.error("Error loading schedule:", err);
+            } finally {
                 setLoading(false);
             }
         };
-        fetchEmployee();
-    }, [user]);
 
-    // Fetch active schedule
-    useEffect(() => {
-        if (!technicianName) return;
+        loadScheduleData();
 
-        const loadJobs = () => {
-            getOrders().then(data => {
-                const assigned = data.filter(order =>
-                    order.technician && technicianName &&
-                    order.technician.toLowerCase().trim() === technicianName.toLowerCase().trim() &&
-                    order.status !== 'Delivered' &&
-                    order.status !== 'Cancelled'
-                ).reverse();
-                setJobs(assigned);
-                setLoading(false);
-            });
-        };
-
-        loadJobs();
-
-        const handleOrderUpdate = () => loadJobs();
-        window.addEventListener('orderUpdated', handleOrderUpdate);
-        return () => window.removeEventListener('orderUpdated', handleOrderUpdate);
-    }, [technicianName]);
+        // Fix: Use correct event name from orderStore.ts
+        const handleOrderUpdate = () => loadScheduleData();
+        window.addEventListener('orders-updated', handleOrderUpdate);
+        return () => window.removeEventListener('orders-updated', handleOrderUpdate);
+    }, [userMobile, activeTab]);
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto pb-10">
@@ -70,8 +75,18 @@ const Schedule = () => {
                 </div>
 
                 <div className="relative z-10 bg-slate-50 p-1.5 rounded-2xl flex border border-slate-200 shadow-inner">
-                    <button className="px-6 py-2.5 bg-white text-indigo-600 font-black text-sm rounded-xl shadow-sm border border-slate-200">Upcoming</button>
-                    <button className="px-6 py-2.5 text-slate-500 font-bold text-sm hover:text-slate-700 transition-colors">Past Jobs</button>
+                    <button
+                        onClick={() => setActiveTab('Upcoming')}
+                        className={`px-6 py-2.5 font-black text-sm rounded-xl transition-all ${activeTab === 'Upcoming' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Upcoming
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('Past')}
+                        className={`px-6 py-2.5 font-bold text-sm rounded-xl transition-all ${activeTab === 'Past' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Past Jobs
+                    </button>
                 </div>
             </div>
 
@@ -150,7 +165,7 @@ const Schedule = () => {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Service Location</p>
-                                                <p className="text-sm font-medium text-slate-600 leading-snug">Main Service App Site (Demo Location)</p>
+                                                <p className="text-sm font-medium text-slate-600 leading-snug">Service Site (Check Order Details)</p>
                                                 <button className="text-[11px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1 mt-1 hover:underline">
                                                     <Navigation className="w-3 h-3" /> Get Directions
                                                 </button>
