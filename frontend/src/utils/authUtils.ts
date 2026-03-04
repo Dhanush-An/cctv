@@ -43,8 +43,8 @@ export const sendOTP = async (mobile: string): Promise<{ success: boolean; role?
     return new Promise((resolve) => {
         setTimeout(() => {
             if (role) {
-                // Use fixed OTP for testing to match backend mock
-                currentOTP = '123456';
+                // Generate a random 6-digit OTP
+                currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
                 console.log(`[authUtils] OTP ${currentOTP} sent to ${mobile} for detected role ${role}`);
                 resolve({ success: true, role, otp: currentOTP });
             } else {

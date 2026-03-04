@@ -20,7 +20,7 @@ export const login = async (req: Request, res: Response) => {
     else if (mobile === VALID_CREDENTIALS.technician) role = 'technician';
     else if (mobile === VALID_CREDENTIALS.customer) role = 'customer';
 
-    if (role && otp === '123456') { // Assuming a fixed OTP for testing
+    if (role && otp) { // Accept any OTP provided by the frontend for simulation
         const token = jwt.sign(
             { mobile, role },
             JWT_SECRET,
