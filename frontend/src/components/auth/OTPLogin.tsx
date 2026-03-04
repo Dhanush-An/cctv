@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendOTP, verifyOTP } from '../../utils/authUtils';
+import { sendOTP } from '../../utils/authUtils';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface OTPLoginProps {
-    onLoginSuccess: (mobile: string, role: string) => void;
+    onLoginSuccess: (mobile: string, role: string, token: string) => void;
 }
 
 const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
@@ -14,7 +14,6 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
     const [otp, setOtp] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [detectedRole, setDetectedRole] = useState<string | null>(null);
     const [generatedOTP, setGeneratedOTP] = useState<string | null>(null);
     const navigate = useNavigate();
 
@@ -32,7 +31,6 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
         setLoading(false);
 
         if (success && role && newOtp) {
-            setDetectedRole(role);
             setGeneratedOTP(newOtp);
             setOtp(newOtp); // Auto-fill the OTP input field
             setStep(2);
@@ -46,13 +44,25 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
         setError('');
         setLoading(true);
 
-        const success = await verifyOTP(mobile, otp);
-        setLoading(false);
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mobile, otp })
+            });
 
-        if (success && detectedRole) {
-            onLoginSuccess(mobile, detectedRole);
-        } else {
-            setError('Invalid OTP. Please try again.');
+            const data = await response.json();
+            setLoading(false);
+
+            if (data.success) {
+                // Pass the token to the parent callback
+                onLoginSuccess(mobile, data.user.role, data.token);
+            } else {
+                setError(data.message || 'Invalid OTP. Please try again.');
+            }
+        } catch (err) {
+            setLoading(false);
+            setError('Server error. Please try again later.');
         }
     };
 

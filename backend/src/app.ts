@@ -6,6 +6,7 @@ import serviceRoutes from './routes/services.js';
 import cartRoutes from './routes/cart.js';
 import customerRoutes from './routes/customers.js';
 import orderRoutes from './routes/orders.js';
+import authRoutes from './routes/auth.js';
 
 const app = express();
 const port = process.env['PORT'] ?? 5000;
@@ -19,6 +20,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/auth', authRoutes);
 
 // ─── Dashboard (static summary) ───────────────────────────────────────────────
 app.get('/api/dashboard', (_req: Request, res: Response) => {

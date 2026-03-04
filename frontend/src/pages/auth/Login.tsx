@@ -6,9 +6,9 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleLoginSuccess = (mobile: string, role: string) => {
-        // Log the user into Context with their determined role
-        login(role as 'admin' | 'technician' | 'customer', mobile);
+    const handleLoginSuccess = (mobile: string, role: string, token: string) => {
+        // Log the user into Context with their determined role and token
+        login(role as any, mobile, token);
 
         // Route them to the appropriate dashboard
         const redirectMap: Record<string, string> = {
