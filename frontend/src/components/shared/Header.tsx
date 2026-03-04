@@ -1,5 +1,6 @@
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import NotificationDropdown from './NotificationDropdown';
 
 
 const Header = () => {
@@ -24,13 +25,7 @@ const Header = () => {
                     />
                 </div>
 
-                <button
-                    onClick={() => { }}
-                    className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all group"
-                >
-                    <Bell className="w-6 h-6 group-hover:rotate-12 transition-transform origin-top" />
-                    <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                </button>
+                <NotificationDropdown userId="admin" isWhiteBackground={true} />
             </div>
         </header>
     );

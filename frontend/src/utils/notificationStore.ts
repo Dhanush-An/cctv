@@ -42,6 +42,37 @@ export const addNotification = async (notification: Omit<Notification, 'id' | 'd
     return newNotification;
 };
 
+// Initialize with sample notifications if empty
+if (!localStorage.getItem(STORAGE_KEY)) {
+    const samples: Notification[] = [
+        {
+            id: 'NTF-1111',
+            userId: 'admin',
+            message: 'New technician registration pending approval.',
+            type: 'System',
+            date: new Date().toISOString(),
+            read: false
+        },
+        {
+            id: 'NTF-2222',
+            userId: '6379068722', // Rajesh Kumar
+            message: 'You have a new job assigned: Security System Maintenance.',
+            type: 'Order',
+            date: new Date().toISOString(),
+            read: false
+        },
+        {
+            id: 'NTF-3333',
+            userId: 'admin',
+            message: 'Monthly revenue report is ready for review.',
+            type: 'System',
+            date: new Date().toISOString(),
+            read: true
+        }
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+}
+
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
     const notifications = getStorageNotifications();
     return notifications.filter(n => n.userId.toLowerCase() === userId.toLowerCase());

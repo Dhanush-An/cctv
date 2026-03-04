@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, DollarSign, Calendar, Bell, LogOut, Star } from 'lucide-react';
+import { LayoutDashboard, Briefcase, DollarSign, Calendar, LogOut, Star } from 'lucide-react';
+import NotificationDropdown from '../shared/NotificationDropdown';
 import { useAuth } from '../../context/AuthContext';
 import { getEmployees } from '../../utils/employeeStore';
 
@@ -133,13 +134,7 @@ const TechnicianLayout = () => {
                 <header className="h-20 bg-slate-50 flex items-center justify-between px-8 sticky top-0 z-10 border-b border-slate-200/50">
                     <h1 className="text-2xl font-bold text-slate-800">{getPageTitle()}</h1>
                     <div className="flex items-center gap-6">
-                        <button
-                            onClick={() => { }}
-                            className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm group"
-                        >
-                            <Bell className="w-6 h-6 group-hover:rotate-12 transition-transform origin-top" />
-                            <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></span>
-                        </button>
+                        <NotificationDropdown userId={user || 'technician'} />
                     </div>
                 </header>
                 <div className="p-8 pb-20">
