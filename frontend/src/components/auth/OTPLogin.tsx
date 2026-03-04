@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP } from '../../utils/authUtils';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { API_URLS } from '../../config';
 
 interface OTPLoginProps {
     onLoginSuccess: (mobile: string, role: string, token: string) => void;
@@ -45,7 +46,7 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
+            const response = await fetch(API_URLS.AUTH.LOGIN, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mobile, otp })
