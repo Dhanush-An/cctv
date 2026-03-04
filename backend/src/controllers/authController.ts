@@ -23,14 +23,20 @@ export const login = async (req: Request, res: Response) => {
     // 1. Check Admin (Hardcoded for now, or could check special flag)
     if (mobile === VALID_CREDENTIALS.admin) {
         role = 'admin';
+        console.log(`[authController] Admin matched: ${mobile}`);
     } else {
         const employees = db.employees || [];
+        console.log(`[authController] Total employees in DB: ${employees.length}`);
 
-        const employeeMatch = employees.find(emp => emp.mobile === mobile && emp.status === 'Active');
+        const employeeMatch = employees.find(emp =>
+            emp.mobile === mobile.trim() && emp.status === 'Active'
+        );
 
         if (employeeMatch) {
             role = 'technician';
+            console.log(`[authController] Technician matched: ${employeeMatch.name}`);
         } else {
+            console.log(`[authController] No employee match for: ${mobile}. Employees checked: ${JSON.stringify(employees.map(e => e.mobile))}`);
             if (mobile === VALID_CREDENTIALS.technician) role = 'technician';
             else if (mobile === VALID_CREDENTIALS.customer) role = 'customer';
             else role = 'customer';

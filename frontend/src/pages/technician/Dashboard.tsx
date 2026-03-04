@@ -57,25 +57,35 @@ const Dashboard = () => {
     }
 
     // Helpers for calculating metrics
-    const today = new Date().toISOString().split('T')[0]; // simple YYYY-MM-DD for matching
-    const currentMonth = new Date().getMonth();
+    const now = new Date();
+    const todayStr = now.toLocaleDateString(); // e.g., "04/03/2026" or "3/4/2026" depending on locale
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
     // Derived Data
-    const todaysJobs = jobs.filter(job => job.date === today && job.status !== 'Delivered');
+    const todaysJobs = jobs.filter(job => {
+        if (!job.date) return false;
+        const jobDateStr = job.date.split(',')[0]; // Get the date part before the time
+        // Try to match standard locale string or ISO parts
+        return jobDateStr === todayStr || job.date.includes(todayStr);
+    }).filter(j => j.status !== 'Delivered');
+
     const completedJobs = jobs.filter(job => job.status === 'Delivered');
 
     const monthlyEarnings = completedJobs
-        .filter(job => new Date(job.date).getMonth() === currentMonth)
-        .reduce((sum, job) => sum + job.total, 0);
+        .filter(job => {
+            if (!job.date) return false;
+            const d = new Date(job.date);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        })
+        .reduce((sum, job) => sum + (job.total || 0), 0);
 
-    const totalEarnings = completedJobs.reduce((sum, job) => sum + job.total, 0);
+    const totalEarnings = completedJobs.reduce((sum, job) => sum + (job.total || 0), 0);
 
     // Mocking area chart data based on completed jobs (simplification)
-    const earningsData = [
-        { name: 'Jan', amount: 0 }, { name: 'Feb', amount: 0 }, { name: 'Mar', amount: 0 },
-        { name: 'Apr', amount: 0 }, { name: 'May', amount: 0 }, { name: 'Jun', amount: 0 },
-    ];
-    // Populate area chart roughly (this could be fully dynamic, but keeping shape for now)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const earningsData = months.slice(0, 6).map(m => ({ name: m, amount: 0 }));
+
     completedJobs.forEach(job => {
         if (!job.date) return;
         const d = new Date(job.date);
@@ -86,6 +96,7 @@ const Dashboard = () => {
     });
 
     const getCustomerInfo = (email: string) => {
+        if (!email) return null;
         return customers.find(c => c.email.toLowerCase() === email.toLowerCase());
     };
 

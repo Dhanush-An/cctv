@@ -15,8 +15,8 @@ const Profile = () => {
             try {
                 const emps = await getEmployees();
                 const loggedInEmp = emps.find(e =>
-                    (e.email && e.email.toLowerCase() === user.toLowerCase()) ||
-                    e.mobile === user
+                    (e.email && e.email.trim().toLowerCase() === user.trim().toLowerCase()) ||
+                    e.mobile.trim() === user.trim()
                 );
                 if (loggedInEmp) {
                     setEmployee(loggedInEmp);

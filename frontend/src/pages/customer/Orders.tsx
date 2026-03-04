@@ -271,7 +271,7 @@ const CustomerOrders = () => {
                                             View Invoice
                                         </button>
 
-                                        {order.status === 'Delivered' && (
+                                        {order.status !== 'Cancelled' && (
                                             <>
                                                 {reviews.some(r => r.orderId === order.id) ? (
                                                     <div className="px-5 py-2.5 bg-indigo-50 text-indigo-500 font-bold text-xs rounded-xl shrink-0 flex items-center gap-2 border border-indigo-100">
@@ -282,7 +282,7 @@ const CustomerOrders = () => {
                                                         onClick={() => setSelectedOrderForReview(order)}
                                                         className="px-5 py-2.5 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-black text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-2"
                                                     >
-                                                        <Star className="w-4 h-4" /> Leave Review
+                                                        <Star className="w-4 h-4" /> Rate Order
                                                     </button>
                                                 )}
                                             </>

@@ -16,7 +16,7 @@ export const determineUserRole = async (mobile: string): Promise<'admin' | 'tech
     }
 
     // 2. Check Employees (Technicians)
-    const employees = getEmployees();
+    const employees = await getEmployees();
     const activeEmployee = employees.find(emp => emp.mobile === mobile && emp.status === 'Active');
     if (activeEmployee) {
         return 'technician';
