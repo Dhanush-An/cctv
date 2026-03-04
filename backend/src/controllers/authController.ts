@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { db } from '../models/data.js';
 
 const JWT_SECRET = process.env['JWT_SECRET'] || 'fallback_secret';
 
@@ -16,11 +17,26 @@ export const login = async (req: Request, res: Response) => {
 
     // In a real app, you would verify the OTP here. 
     // For now, we simulate success for any mobile number for testing
+    // Dynamic role determination
     let role: string | null = null;
-    if (mobile === VALID_CREDENTIALS.admin) role = 'admin';
-    else if (mobile === VALID_CREDENTIALS.technician) role = 'technician';
-    else if (mobile === VALID_CREDENTIALS.customer) role = 'customer';
-    else role = 'customer'; // Default to customer for any other number for testing
+
+    // 1. Check Admin (Hardcoded for now, or could check special flag)
+    if (mobile === VALID_CREDENTIALS.admin) {
+        role = 'admin';
+    } else {
+        // 2. Check Employees (Technicians)
+        const employees = db.employees;
+        const employeeMatch = employees.find(emp => emp.mobile === mobile && emp.status === 'Active');
+
+        if (employeeMatch) {
+            role = 'technician';
+        } else {
+            // 3. Check hardcoded or default to customer
+            if (mobile === VALID_CREDENTIALS.technician) role = 'technician';
+            else if (mobile === VALID_CREDENTIALS.customer) role = 'customer';
+            else role = 'customer'; // Default for testing
+        }
+    }
 
     if (otp) { // Accept any OTP provided by the frontend for simulation
         const token = jwt.sign(

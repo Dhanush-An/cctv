@@ -76,6 +76,16 @@ export interface Customer {
     address?: string;
 }
 
+export interface Employee {
+    id: string;
+    name: string;
+    mobile: string;
+    email: string;
+    address: string;
+    dateOfJoining: string;
+    status: 'Active' | 'Inactive';
+}
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -138,6 +148,26 @@ const initialDB = {
             status: 'Active',
         },
     ] as Customer[],
+    employees: [
+        {
+            id: 'EMP-001',
+            name: 'Dhanush Tamilarasan',
+            mobile: '6379068722',
+            email: 'dhanush.antigraviity@gmail.com',
+            address: '36 Harur',
+            dateOfJoining: '2026-01-21',
+            status: 'Active'
+        },
+        {
+            id: 'EMP-002',
+            name: 'Azhaguvel',
+            mobile: '7777777777',
+            email: 'azhaguvel.antigraviity@gmail.com',
+            address: '36 Harur',
+            dateOfJoining: '2026-02-09',
+            status: 'Active'
+        }
+    ] as Employee[],
 };
 
 // ─── In-Memory Store with Persistence ──────────────────────────────────────────

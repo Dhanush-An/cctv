@@ -165,6 +165,7 @@ const Register = () => {
                                             setError('');
                                         }}
                                         placeholder="10-digit mobile" required
+                                        maxLength={10}
                                         className="w-full bg-white/5 border border-white/10 text-white placeholder:text-slate-500 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all font-medium tracking-wide"
                                     />
                                 </div>

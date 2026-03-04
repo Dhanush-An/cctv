@@ -153,7 +153,8 @@ const Profile = () => {
                                 <input
                                     type="text"
                                     value={editForm.mobile}
-                                    onChange={e => setEditForm({ ...editForm, mobile: e.target.value })}
+                                    maxLength={10}
+                                    onChange={e => setEditForm({ ...editForm, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 />
                             ) : (

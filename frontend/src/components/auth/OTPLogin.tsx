@@ -106,6 +106,7 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
                                         value={mobile}
                                         onChange={(e) => { setMobile(e.target.value.replace(/\D/g, '').slice(0, 10)); setError(''); }}
                                         placeholder="Enter your 10-digit mobile"
+                                        maxLength={10}
                                         required
                                         className="w-full bg-white/5 border border-white/10 text-white placeholder:text-slate-500 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all font-medium tracking-wide"
                                     />

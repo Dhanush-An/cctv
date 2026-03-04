@@ -9,15 +9,16 @@ const Employees = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-    const loadData = () => {
-        setEmployees(getEmployees());
+    const loadData = async () => {
+        const data = await getEmployees();
+        setEmployees(data);
     };
 
     useEffect(() => {
         loadData();
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const form = e.currentTarget as HTMLFormElement;
         const data = new FormData(form);
@@ -31,9 +32,9 @@ const Employees = () => {
         };
 
         if (editingEmployee) {
-            updateEmployee(editingEmployee.id, employeeData);
+            await updateEmployee(editingEmployee.id, employeeData);
         } else {
-            saveEmployee(employeeData);
+            await saveEmployee(employeeData);
         }
 
         loadData();
@@ -50,14 +51,14 @@ const Employees = () => {
         setEditingEmployee(null);
     };
 
-    const handleToggleStatus = (id: string) => {
-        toggleEmployeeStatus(id);
+    const handleToggleStatus = async (id: string) => {
+        await toggleEmployeeStatus(id);
         loadData();
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to remove this employee?')) {
-            deleteEmployee(id);
+            await deleteEmployee(id);
             loadData();
         }
     };
@@ -269,7 +270,19 @@ const Employees = () => {
                                             <span className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-slate-500 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl">
                                                 +91
                                             </span>
-                                            <input name="mobile" type="tel" pattern="[0-9]{10}" defaultValue={editingEmployee?.mobile} required className="w-full bg-slate-50 border border-slate-200 rounded-r-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="10-digit number" />
+                                            <input
+                                                name="mobile"
+                                                type="tel"
+                                                pattern="[0-9]{10}"
+                                                defaultValue={editingEmployee?.mobile}
+                                                maxLength={10}
+                                                onInput={(e) => {
+                                                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 10);
+                                                }}
+                                                required
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-r-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                                placeholder="10-digit number"
+                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
