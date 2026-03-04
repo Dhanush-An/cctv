@@ -451,6 +451,15 @@
       "address": "36 Harur",
       "dateOfJoining": "2026-03-01",
       "status": "Active"
+    },
+    {
+      "id": "EMP-003",
+      "name": "Pooja",
+      "mobile": "2222222222",
+      "email": "pooja.antigraviity@gmail.com",
+      "address": "12,harur",
+      "dateOfJoining": "2026-03-10",
+      "status": "Active"
     }
   ]
 }

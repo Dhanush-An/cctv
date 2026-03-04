@@ -114,8 +114,10 @@ const loadDB = (): typeof initialDB => {
 
 const saveDB = (data: any) => {
     try {
-        console.log('[DB] Saving to disk...');
+        console.log(`[DB] Saving to disk at ${new Date().toISOString()}...`);
+        console.log(`[DB] Current employee count: ${data.employees?.length || 0}`);
         fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+        console.log('[DB] Save complete.');
     } catch (err) {
         console.error('[DB] Failed to save:', err);
     }
