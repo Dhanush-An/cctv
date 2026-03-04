@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Search, Briefcase, Mail, Phone, CalendarDays, MapPin, X, Check, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { getEmployees, saveEmployee, toggleEmployeeStatus, deleteEmployee } from '../../utils/employeeStore';
+import { Users, UserPlus, Search, Briefcase, Mail, Phone, CalendarDays, MapPin, X, Check, CheckCircle2, ShieldAlert, Edit } from 'lucide-react';
+import { getEmployees, saveEmployee, toggleEmployeeStatus, deleteEmployee, updateEmployee } from '../../utils/employeeStore';
 import type { Employee } from '../../utils/employeeStore';
 
 const Employees = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
     const loadData = () => {
         setEmployees(getEmployees());
@@ -16,12 +17,12 @@ const Employees = () => {
         loadData();
     }, []);
 
-    const handleAdd = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const form = e.currentTarget as HTMLFormElement;
         const data = new FormData(form);
 
-        const newEmployee = {
+        const employeeData = {
             name: data.get('name') as string,
             mobile: data.get('mobile') as string,
             email: data.get('email') as string,
@@ -29,9 +30,24 @@ const Employees = () => {
             dateOfJoining: data.get('dateOfJoining') as string,
         };
 
-        saveEmployee(newEmployee);
+        if (editingEmployee) {
+            updateEmployee(editingEmployee.id, employeeData);
+        } else {
+            saveEmployee(employeeData);
+        }
+
         loadData();
+        handleCloseModal();
+    };
+
+    const handleEdit = (emp: Employee) => {
+        setEditingEmployee(emp);
+        setShowAddModal(true);
+    };
+
+    const handleCloseModal = () => {
         setShowAddModal(false);
+        setEditingEmployee(null);
     };
 
     const handleToggleStatus = (id: string) => {
@@ -194,6 +210,13 @@ const Employees = () => {
                                         <td className="py-4 pr-6">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
+                                                    onClick={() => handleEdit(emp)}
+                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+                                                    title="Edit Employee"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button
                                                     onClick={() => handleToggleStatus(emp.id)}
                                                     className="px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors"
                                                 >
@@ -218,25 +241,27 @@ const Employees = () => {
             {/* Add Employee Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={handleCloseModal}></div>
                     <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
                         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-800">Add New Employee</h2>
-                                <p className="text-xs text-slate-500 mt-1">Enter the official details to register a new staff member.</p>
+                                <h2 className="text-xl font-bold text-slate-800">{editingEmployee ? 'Edit Employee' : 'Add New Employee'}</h2>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {editingEmployee ? `Updating details for ${editingEmployee.name}` : 'Enter the official details to register a new staff member.'}
+                                </p>
                             </div>
-                            <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:bg-white rounded-xl transition-colors shadow-sm bg-slate-100">
+                            <button onClick={handleCloseModal} className="p-2 text-slate-400 hover:bg-white rounded-xl transition-colors shadow-sm bg-slate-100">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleAdd} className="p-6">
+                        <form onSubmit={handleSubmit} className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Left Col */}
                                 <div className="space-y-5">
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Full Name <span className="text-rose-500">*</span></label>
-                                        <input name="name" type="text" required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="e.g. John Doe" />
+                                        <input name="name" type="text" defaultValue={editingEmployee?.name} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="e.g. John Doe" />
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Mobile Number <span className="text-rose-500">*</span></label>
@@ -244,34 +269,34 @@ const Employees = () => {
                                             <span className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-slate-500 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl">
                                                 +91
                                             </span>
-                                            <input name="mobile" type="tel" pattern="[0-9]{10}" required className="w-full bg-slate-50 border border-slate-200 rounded-r-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="10-digit number" />
+                                            <input name="mobile" type="tel" pattern="[0-9]{10}" defaultValue={editingEmployee?.mobile} required className="w-full bg-slate-50 border border-slate-200 rounded-r-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="10-digit number" />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Email Address <span className="text-rose-500">*</span></label>
-                                        <input name="email" type="email" required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="name@company.com" />
+                                        <input name="email" type="email" defaultValue={editingEmployee?.email} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="name@company.com" />
                                     </div>
                                 </div>
                                 {/* Right Col */}
                                 <div className="space-y-5">
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Date of Joining <span className="text-rose-500">*</span></label>
-                                        <input name="dateOfJoining" type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                        <input name="dateOfJoining" type="date" defaultValue={editingEmployee?.dateOfJoining} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all" />
                                     </div>
                                     <div className="space-y-1.5 h-full">
                                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Full Address <span className="text-rose-500">*</span></label>
-                                        <textarea name="address" rows={4} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all resize-none" placeholder="Enter complete residential address..."></textarea>
+                                        <textarea name="address" rows={4} defaultValue={editingEmployee?.address} required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all resize-none" placeholder="Enter complete residential address..."></textarea>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                                <button type="button" onClick={() => setShowAddModal(false)} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors">
+                                <button type="button" onClick={handleCloseModal} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors">
                                     Cancel
                                 </button>
                                 <button type="submit" className="flex items-center gap-2 px-8 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-100">
                                     <Check className="w-4 h-4" />
-                                    Save Employee
+                                    {editingEmployee ? 'Update Details' : 'Save Employee'}
                                 </button>
                             </div>
                         </form>
