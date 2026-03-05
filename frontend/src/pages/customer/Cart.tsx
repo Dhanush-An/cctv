@@ -58,10 +58,10 @@ const CartPage = () => {
 
         try {
             const hasService = safeItems.some(item => (item.category || '').toLowerCase().includes('service'));
-            const hasProduct = safeItems.some(item => !(item.category || '').toLowerCase().includes('service'));
-            const type = hasService && hasProduct ? 'Mixed' : (hasService ? 'Service' : 'Product');
+            const type = hasService
+                ? (safeItems.some(item => !(item.category || '').toLowerCase().includes('service')) ? 'Mixed' : 'Service')
+                : 'Product';
 
-            // Generate a demo name derived from the email for the demo, otherwise default
             const derivedName = user
                 ? (user === 'john@example.com' ? 'John Doe' : user.split('@')[0])
                 : 'Demo Customer';
@@ -69,32 +69,26 @@ const CartPage = () => {
             let assignedTechnician: string | undefined = undefined;
 
             if (hasService) {
-                // Round-Robin Assignment Logic
-                const employees = await getEmployees();
-                const activeTechs = employees.filter(emp => emp.status === 'Active');
-
-                if (activeTechs.length > 0) {
-                    const allOrders = await getOrders();
-
-                    // Filter to orders that a) have a technician assigned and b) are of type Service/Mixed
-                    // Then get the most recently created one. (Orders are typically returned oldest first or newest first, let's sort by date just in case)
-                    const techOrders = allOrders
-                        .filter(o => o.technician && (o.type === 'Service' || o.type === 'Mixed'))
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-                    if (techOrders.length === 0) {
-                        assignedTechnician = activeTechs[0].name;
-                    } else {
-                        const lastTechName = techOrders[0].technician;
-                        const lastTechIndex = activeTechs.findIndex(t => t.name === lastTechName);
-
-                        if (lastTechIndex === -1 || lastTechIndex === activeTechs.length - 1) {
-                            // If not found (maybe deleted) or it was the last one, loop back to start
+                try {
+                    const employees = await getEmployees();
+                    const activeTechs = employees.filter(emp => emp.status === 'Active');
+                    if (activeTechs.length > 0) {
+                        const allOrders = await getOrders();
+                        const techOrders = allOrders
+                            .filter(o => o.technician && (o.type === 'Service' || o.type === 'Mixed'))
+                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                        if (techOrders.length === 0) {
                             assignedTechnician = activeTechs[0].name;
                         } else {
-                            assignedTechnician = activeTechs[lastTechIndex + 1].name;
+                            const lastTechName = techOrders[0].technician;
+                            const lastTechIndex = activeTechs.findIndex(t => t.name === lastTechName);
+                            assignedTechnician = (lastTechIndex === -1 || lastTechIndex === activeTechs.length - 1)
+                                ? activeTechs[0].name
+                                : activeTechs[lastTechIndex + 1].name;
                         }
                     }
+                } catch (techError) {
+                    console.warn('Could not assign technician:', techError);
                 }
             }
 
@@ -108,12 +102,17 @@ const CartPage = () => {
             });
 
             if (order) {
-                await addNotification({
+                // Non-blocking - don't let notification failure cancel checkout
+                const orderId = order.id || (order as any)._id || 'new';
+                addNotification({
                     userId: user || 'customer@demo.com',
-                    message: `Order #${order.id.slice(-4)} placed successfully!`,
+                    message: `Order #${String(orderId).slice(-4)} placed successfully!`,
                     type: 'Order'
-                });
-                await clearCart();
+                }).catch(err => console.warn('Notification failed (non-critical):', err));
+
+                // Clear cart - also non-blocking
+                clearCart().catch(err => console.warn('Clear cart failed (non-critical):', err));
+
                 setItems([]);
                 setShowSuccess(true);
             } else {
