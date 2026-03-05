@@ -16,6 +16,6 @@ export const connectDB = async () => {
         console.log('✅ Connected to MongoDB Atlas');
     } catch (error) {
         console.error('❌ MongoDB Connection Error:', error);
-        process.exit(1);
+        console.log('💡 Tip: If you see "querySrv ENOTFOUND", your DNS might be blocking SRV records. Try using Google DNS (8.8.8.8).');
     }
 };

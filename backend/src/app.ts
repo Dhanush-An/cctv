@@ -16,6 +16,7 @@ import notificationRoutes from './routes/notifications.js';
 import systemRoutes from './routes/system.js';
 
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 
 dotenv.config();
@@ -73,14 +74,15 @@ app.get('/', (_req: Request, res: Response) => {
     res.send('CCTV Backend API is running ✅');
 });
 app.get("/test-db", async (req: Request, res: Response) => {
-    try {
-        res.json({
-            message: "Database route working",
-            status: "MongoDB connection check"
-        });
-    } catch (error) {
-        res.status(500).json({ message: "Error", error });
-    }
+    const states = ['Disconnected', 'Connected', 'Connecting', 'Disconnecting'];
+    const connectionState = mongoose.connection.readyState;
+
+    res.json({
+        message: "Database route working",
+        status: "MongoDB connection check",
+        connection: states[connectionState] || 'Unknown',
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.listen(port, () => {
