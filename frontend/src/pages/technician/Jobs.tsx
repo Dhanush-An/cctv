@@ -43,21 +43,24 @@ const Jobs = () => {
         fetchEmployee();
 
         // Fetch all customers for lookup
-        getCustomers().then(setCustomers);
+        const loadCustomers = async () => {
+            const data = await getCustomers();
+            setCustomers(data);
+        };
+        loadCustomers();
     }, [user]);
 
     useEffect(() => {
         if (!technicianName) return;
 
-        const loadJobs = () => {
-            getOrders().then(data => {
-                const assigned = data.filter(order =>
-                    order.technician && technicianName &&
-                    order.technician.toLowerCase().trim() === technicianName.toLowerCase().trim()
-                ).reverse();
-                setJobs(assigned);
-                setLoading(false);
-            });
+        const loadJobs = async () => {
+            const data = await getOrders();
+            const assigned = data.filter(order =>
+                order.technician && technicianName &&
+                order.technician.toLowerCase().trim() === technicianName.toLowerCase().trim()
+            ).reverse();
+            setJobs(assigned);
+            setLoading(false);
         };
 
         loadJobs();

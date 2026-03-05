@@ -17,8 +17,12 @@ const Settings = () => {
     const [systemEditForm, setSystemEditForm] = useState({ email: '', password: '' });
 
     useEffect(() => {
-        setEmployees(getEmployees());
-        setSystemCreds(getSystemCredentials());
+        const loadData = async () => {
+            const empData = await getEmployees();
+            setEmployees(empData);
+            setSystemCreds(getSystemCredentials());
+        };
+        loadData();
 
         const handler = () => setSystemCreds(getSystemCredentials());
         window.addEventListener('system-credentials-updated', handler);
@@ -34,8 +38,8 @@ const Settings = () => {
         setEditingId(null);
     };
 
-    const saveEdit = (id: string) => {
-        const updated = updateEmployee(id, editForm);
+    const saveEdit = async (id: string) => {
+        const updated = await updateEmployee(id, editForm);
         if (updated) {
             setEmployees(prev => prev.map(e => e.id === id ? updated : e));
         }

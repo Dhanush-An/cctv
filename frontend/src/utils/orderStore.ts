@@ -89,7 +89,7 @@ export const saveOrderImages = async (orderId: string, startImage?: string, comp
 
 // Compatibility export (not needed for backend but kept if used as mock elsewhere)
 export const createOrder = async (orderData: Partial<Order>): Promise<Order | null> => {
-    console.warn('createOrder is not yet implemented on backend');
+    console.warn('createOrder is not yet implemented on backend', orderData);
     return null;
 };
 export const updateOrderPaymentStatus = async (id: string, paymentStatus: Order['paymentStatus']): Promise<Order | null> => {

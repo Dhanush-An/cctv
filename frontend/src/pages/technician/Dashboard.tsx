@@ -14,7 +14,6 @@ const Dashboard = () => {
     const { user } = useAuth();
     const [jobs, setJobs] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [technicianName, setTechnicianName] = useState('');
     const [customers, setCustomers] = useState<RegisteredCustomer[]>([]);
 
     useEffect(() => {
@@ -29,7 +28,7 @@ const Dashboard = () => {
                 );
 
                 const name = current ? current.name : '';
-                setTechnicianName(name);
+                // setTechnicianName(name);
 
                 // 2. Load Jobs
                 const data = await getOrders();
