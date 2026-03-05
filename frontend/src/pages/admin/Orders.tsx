@@ -39,7 +39,8 @@ const Orders = () => {
 
     useEffect(() => {
         fetchOrders();
-        setEmployees(getEmployees());
+        const data = getEmployees();
+        setEmployees(data);
     }, []);
 
     const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {

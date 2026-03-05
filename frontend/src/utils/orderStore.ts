@@ -92,9 +92,11 @@ export const createOrder = async (orderData: Partial<Order>): Promise<Order | nu
     console.warn('createOrder is not yet implemented on backend');
     return null;
 };
-export const updateOrderPaymentStatus = async (_id: string, _paymentStatus: Order['paymentStatus']): Promise<Order | null> => {
+export const updateOrderPaymentStatus = async (id: string, paymentStatus: Order['paymentStatus']): Promise<Order | null> => {
+    console.warn('updateOrderPaymentStatus is not yet implemented on backend', { id, paymentStatus });
     return null;
 };
-export const refundOrder = async (_id: string): Promise<Order | null> => {
+export const refundOrder = async (id: string): Promise<Order | null> => {
+    console.warn('refundOrder is not yet implemented on backend', { id });
     return null;
 };
