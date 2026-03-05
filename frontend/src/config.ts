@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://cctv-caro.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://cctv-caro.onrender.com";
 
 export const API_URLS = {
     AUTH: {
