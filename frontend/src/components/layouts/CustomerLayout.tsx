@@ -89,11 +89,12 @@ const CustomerLayout = () => {
             const completedOrder = blockingOrder;
             setBlockingOrder(null);
 
-            await addNotification({
+            // Non-blocking notification
+            addNotification({
                 userId: user || 'customer@demo.com',
-                message: `Payment for Order #${completedOrder.id.slice(-4)} successful!`,
+                message: `Payment for Order #${String(completedOrder.id || '').slice(-4)} successful!`,
                 type: 'Payment'
-            });
+            }).catch(err => console.warn('Notification failed (non-critical):', err));
         } catch (error) {
             console.error('Payment failed:', error);
             alert('Payment processing failed. Please try again.');

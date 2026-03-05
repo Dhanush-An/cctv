@@ -31,7 +31,7 @@ const Dashboard = () => {
                 // But let's prioritize the new dashboardData
                 const [ordersData, employeesData, messagesData, customersData] = await Promise.all([
                     getOrders(),
-                    Promise.resolve(getEmployees()),
+                    getEmployees(),
                     getContactMessages(),
                     getCustomers()
                 ]);

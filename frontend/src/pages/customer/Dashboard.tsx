@@ -138,12 +138,13 @@ const CustomerDashboard = () => {
             setSelectedOrderForPayment(null);
             refreshData(); // Refresh local list
 
+            // Non-blocking notification - don't crash payment on notification failure
             if (orderToReview) {
-                await addNotification({
+                addNotification({
                     userId: user || 'customer@demo.com',
-                    message: `Payment for Order #${orderToReview.id.slice(-4)} successful!`,
+                    message: `Payment for Order #${String(orderToReview.id || '').slice(-4)} successful!`,
                     type: 'Payment'
-                });
+                }).catch(err => console.warn('Notification failed (non-critical):', err));
             }
 
         } catch (error) {
@@ -151,6 +152,20 @@ const CustomerDashboard = () => {
             alert('Payment failed. Please try again.');
         } finally {
             setProcessingPayment(false);
+        }
+    };
+
+    const handleTrackOrder = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!trackId.trim()) return;
+        const found = orders.find(o =>
+            o.id?.toLowerCase().includes(trackId.toLowerCase()) ||
+            String(o.id).endsWith(trackId.replace('#', ''))
+        );
+        if (found) {
+            alert(`Order ${found.id}\nStatus: ${found.status}\nTotal: ₹${found.total.toLocaleString('en-IN')}\nDate: ${found.date}`);
+        } else {
+            alert(`No order found matching "${trackId}". Please check the order ID.`);
         }
     };
 
@@ -367,7 +382,7 @@ const CustomerDashboard = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
                 <h2 className="text-base font-bold text-slate-800 mb-1">Track Your Order</h2>
                 <p className="text-xs text-slate-500 mb-4">Enter your order ID to get real-time status updates.</p>
-                <form onSubmit={(e) => { e.preventDefault(); alert(`Tracking: ${trackId}`); }} className="flex gap-3">
+                <form onSubmit={handleTrackOrder} className="flex gap-3">
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input

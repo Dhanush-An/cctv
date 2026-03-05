@@ -75,7 +75,7 @@ const CustomerOrders = () => {
 
         try {
             await addReview({
-                user: user.split('@')[0], // Simplified name from email
+                user: user.split('@')[0],
                 customerEmail: user,
                 rating: reviewRating,
                 comment: reviewComment,
@@ -90,11 +90,12 @@ const CustomerOrders = () => {
             setReviewRating(5);
             fetchReviews();
 
-            await addNotification({
+            // Non-blocking notification
+            addNotification({
                 userId: user,
                 message: "Thank you for your feedback! Your review is pending moderation.",
                 type: 'System'
-            });
+            }).catch(err => console.warn('Notification failed (non-critical):', err));
         } catch (error) {
             console.error('Review submission failed:', error);
             alert('Failed to submit review. Please try again.');
@@ -108,20 +109,19 @@ const CustomerOrders = () => {
         setProcessingPayment(true);
 
         try {
-            // Simulate API delay
             await new Promise(resolve => setTimeout(resolve, 1500));
-
             await updateOrderPaymentStatus(selectedOrderForPayment.id, 'Paid');
 
             const completedOrder = selectedOrderForPayment;
             setSelectedOrderForPayment(null);
-            fetchOrders(); // Refresh local list
+            fetchOrders();
 
-            await addNotification({
+            // Non-blocking notification
+            addNotification({
                 userId: user || 'customer@demo.com',
-                message: `Payment for Order #${completedOrder.id.slice(-4)} successful!`,
+                message: `Payment for Order #${String(completedOrder.id || '').slice(-4)} successful!`,
                 type: 'Payment'
-            });
+            }).catch(err => console.warn('Notification failed (non-critical):', err));
 
         } catch (error) {
             console.error('Payment failed:', error);
