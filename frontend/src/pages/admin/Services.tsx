@@ -292,7 +292,7 @@ const Services = () => {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-sm font-bold text-slate-700">Category <span className="text-rose-500">*</span></label>
                                             <select name="type" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm appearance-none">
@@ -300,10 +300,6 @@ const Services = () => {
                                                 <option value="Maintenance">Maintenance</option>
                                                 <option value="Repair">Repair</option>
                                             </select>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-slate-700">Stock Quantity</label>
-                                            <input name="stockQuantity" type="number" defaultValue={99} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm" />
                                         </div>
                                     </div>
                                 </div>
