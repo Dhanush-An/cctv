@@ -4,7 +4,7 @@ import Notification from '../models/Notification.js';
 export const getNotifications = async (req: Request, res: Response) => {
     try {
         const { userId } = req.query;
-        const items = await Notification.find(userId ? { userId } : {}).sort({ date: -1 });
+        const items = await Notification.find((userId ? { userId } : {}) as any).sort({ date: -1 });
         res.json(items);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -34,7 +34,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 export const markAllAsRead = async (req: Request, res: Response) => {
     try {
         const { userId } = req.body;
-        await Notification.updateMany({ userId, read: false }, { read: true });
+        await Notification.updateMany({ userId, read: false } as any, { read: true });
         res.json({ message: 'All marked as read' });
     } catch (error) {
         res.status(400).json({ error: 'Failed to update notifications' });

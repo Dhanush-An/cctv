@@ -4,7 +4,7 @@ import Wishlist from '../models/Wishlist.js';
 export const getWishlist = async (req: Request, res: Response) => {
     try {
         const { userId } = req.query;
-        const items = await Wishlist.find(userId ? { userId } : {});
+        const items = await Wishlist.find((userId ? { userId } : {}) as any);
         res.json(items);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch wishlist' });
@@ -14,7 +14,7 @@ export const getWishlist = async (req: Request, res: Response) => {
 export const addToWishlist = async (req: Request, res: Response) => {
     try {
         const { productId, userId } = req.body;
-        const exists = await Wishlist.findOne({ productId, userId });
+        const exists = await Wishlist.findOne({ productId, userId } as any);
         if (exists) return res.json(exists);
 
         const id = `WISH-${Math.random().toString(36).substr(2, 9)}`;
@@ -29,7 +29,7 @@ export const addToWishlist = async (req: Request, res: Response) => {
 export const removeFromWishlist = async (req: Request, res: Response) => {
     try {
         const { productId, userId } = req.query;
-        await Wishlist.findOneAndDelete({ productId, userId });
+        await Wishlist.findOneAndDelete({ productId, userId } as any);
         res.json({ message: 'Removed from wishlist' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to remove from wishlist' });
