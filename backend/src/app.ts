@@ -72,6 +72,16 @@ app.get('/api/dashboard', (_req: Request, res: Response) => {
 app.get('/', (_req: Request, res: Response) => {
     res.send('CCTV Backend API is running ✅');
 });
+app.get("/test-db", async (req: Request, res: Response) => {
+    try {
+        res.json({
+            message: "Database route working",
+            status: "MongoDB connection check"
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error", error });
+    }
+});
 
 app.listen(port, () => {
     console.log(`✅ Server running on https://cctv-caro.onrender.com`);
