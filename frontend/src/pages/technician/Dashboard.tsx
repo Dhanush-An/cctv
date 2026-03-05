@@ -123,62 +123,62 @@ const Dashboard = () => {
     return (
         <div className="space-y-6">
             {/* Top Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-bold text-slate-500 mb-1">Today's Jobs</p>
+                        <p className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">Today's Jobs</p>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black text-slate-800">{todaysJobs.length}</span>
-                            <MapPin className="w-5 h-5 text-teal-400" />
+                            <span className="text-xl md:text-3xl font-black text-slate-800">{todaysJobs.length}</span>
+                            <MapPin className="w-4 h-4 md:w-5 md:h-5 text-teal-400" />
                         </div>
                     </div>
-                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                        <CalendarDays className="w-6 h-6" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 shrink-0">
+                        <CalendarDays className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-bold text-slate-500 mb-1">Monthly Earnings</p>
+                        <p className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">Monthly Earnings</p>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black text-slate-800">${monthlyEarnings.toLocaleString()}</span>
+                            <span className="text-xl md:text-3xl font-black text-slate-800">${monthlyEarnings.toLocaleString()}</span>
                         </div>
-                        <p className="text-xs font-bold text-slate-400 mt-1 flex items-center gap-1">
+                        <p className="text-[8px] md:text-xs font-bold text-slate-400 mt-1 flex items-center gap-1">
                             Current Month
                         </p>
                     </div>
-                    <div className="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-teal-200">
-                        <DollarSign className="w-6 h-6" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-teal-200 shrink-0">
+                        <DollarSign className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-bold text-slate-500 mb-1">Jobs Completed</p>
+                        <p className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">Jobs Completed</p>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black text-slate-800">{completedJobs.length}</span>
+                            <span className="text-xl md:text-3xl font-black text-slate-800">{completedJobs.length}</span>
                         </div>
                     </div>
-                    <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                        <CheckCircle2 className="w-6 h-6" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200 shrink-0">
+                        <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100 flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-bold text-slate-500 mb-1">Ratings</p>
+                        <p className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">Ratings</p>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black text-slate-800">4.7</span>
-                            <div className="flex gap-0.5 text-amber-400">
-                                <Star className="w-4 h-4 fill-current" />
-                                <Star className="w-4 h-4 fill-current" />
-                                <Star className="w-4 h-4 fill-current" />
-                                <Star className="w-4 h-4 fill-current" />
+                            <span className="text-xl md:text-3xl font-black text-slate-800">4.7</span>
+                            <div className="hidden sm:flex gap-0.5 text-amber-400">
+                                <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
+                                <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
+                                <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
+                                <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
                             </div>
                         </div>
                     </div>
-                    <div className="w-12 h-12 bg-amber-400 rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-200">
-                        <Star className="w-6 h-6 fill-current" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-400 rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-200 shrink-0">
+                        <Star className="w-5 h-5 md:w-6 md:h-6 fill-current" />
                     </div>
                 </div>
             </div>
@@ -265,25 +265,25 @@ const Dashboard = () => {
                         </ResponsiveContainer>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <p className="text-sm font-bold text-slate-500 mb-1">Total Earnings:</p>
-                            <p className="text-2xl font-black text-slate-800">${totalEarnings.toLocaleString()}</p>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 mb-1">Total Earnings:</p>
+                            <p className="text-xl md:text-2xl font-black text-slate-800">${totalEarnings.toLocaleString()}</p>
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-slate-500 mb-1">Jobs Completed:</p>
-                            <p className="text-2xl font-black text-slate-800">{completedJobs.length}</p>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 mb-1">Jobs Completed:</p>
+                            <p className="text-xl md:text-2xl font-black text-slate-800">{completedJobs.length}</p>
                         </div>
                     </div>
 
-                    <div className="flex gap-4 mt-6">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-6">
                         <button
                             onClick={() => navigate('/technician/earnings')}
-                            className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-xl transition-all text-sm"
+                            className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-xl transition-all text-xs md:text-sm"
                         >
                             View Details
                         </button>
-                        <button className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2">
+                        <button className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs md:text-sm flex items-center justify-center gap-2">
                             <CalendarDays className="w-4 h-4" /> Jun 2023
                         </button>
                     </div>

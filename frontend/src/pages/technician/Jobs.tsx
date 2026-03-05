@@ -145,11 +145,11 @@ const Jobs = () => {
                     </p>
                 </div>
             ) : (
-                <div className="grid gap-6">
+                <div className="grid gap-4 md:gap-6 px-0 sm:px-4">
                     {jobs.map(job => (
-                        <div key={job.id} className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                            <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
-                                <div className="flex-1 space-y-6">
+                        <div key={job.id} className="bg-white rounded-xl md:rounded-[24px] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <div className="p-4 md:p-8 flex flex-col lg:flex-row gap-6 md:gap-8">
+                                <div className="flex-1 space-y-4 md:space-y-6">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-3 mb-2">

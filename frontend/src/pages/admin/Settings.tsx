@@ -58,7 +58,7 @@ const Settings = () => {
     };
 
     return (
-        <div className="space-y-6 max-w-5xl mx-auto">
+        <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-0">
             <div className="flex items-center gap-3 mb-8">
                 <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
                     <Shield className="w-6 h-6" />
@@ -106,7 +106,7 @@ const Settings = () => {
                                             type="email"
                                             value={systemEditForm.email}
                                             onChange={e => setSystemEditForm({ ...systemEditForm, email: e.target.value })}
-                                            className="w-48 text-right bg-white border border-indigo-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                            className="w-full sm:w-48 text-right bg-white border border-indigo-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                         />
                                     ) : (
                                         <span className="font-mono font-bold text-slate-800 text-sm">{systemCreds?.admin.email}</span>
