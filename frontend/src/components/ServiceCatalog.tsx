@@ -48,9 +48,9 @@ const ServiceCatalog = ({ onBookNow, title, subtitle }: Props) => {
                 </div>
             )}
 
-            <div className="flex gap-8 items-start">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* ─── Sidebar ─── */}
-                <aside className="shrink-0 w-60 sticky top-16 self-start bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-8">
+                <aside className="w-full md:shrink-0 md:w-60 sticky top-16 self-start bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-8">
                     <div>
                         <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
                             <SlidersHorizontal className="w-4 h-4 text-blue-600" /> Categories

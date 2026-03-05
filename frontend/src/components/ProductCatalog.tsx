@@ -80,9 +80,9 @@ const ProductCatalog = ({ onBuyNow, compact = false, title, subtitle }: Props) =
                 </div>
             )}
 
-            <div className="flex gap-6 items-start">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
                 {/* ─── Sidebar ─── */}
-                <aside className={`shrink-0 ${compact ? 'w-44' : 'w-52'} sticky top-16 self-start`}>
+                <aside className={`w-full md:shrink-0 ${compact ? 'md:w-44' : 'md:w-52'} sticky top-16 self-start`}>
                     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5 max-h-[calc(100vh-4.5rem)] overflow-y-auto">
 
                         {/* Categories */}
