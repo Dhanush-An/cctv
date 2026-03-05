@@ -1,7 +1,8 @@
-const STORAGE_KEY = 'cctv_cart';
+import API_BASE_URL from '../config';
 
 export interface CartItem {
     id: string;
+    _id?: string;
     name: string;
     image: string;
     price: number;
@@ -10,68 +11,62 @@ export interface CartItem {
     category: string;
 }
 
-// GET cart
+const API_ENDPOINT = `${API_BASE_URL}/api/cart`;
+
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        },
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'API Error' }));
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 export const getCart = async (): Promise<CartItem[]> => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return [];
     try {
-        const parsed = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed : [];
+        return await apiFetch(API_ENDPOINT);
     } catch (e) {
-        console.error('Invalid cart data in localStorage:', e);
+        console.error('Failed to fetch cart:', e);
         return [];
     }
 };
 
-// POST add or increment
 export const addToCart = async (item: Omit<CartItem, 'quantity'>): Promise<CartItem> => {
-    const cart = await getCart();
-    const existing = cart.find(c => c.id === item.id);
-
-    if (existing) {
-        existing.quantity += 1;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-        return existing;
-    } else {
-        const newItem = { ...item, quantity: 1 };
-        cart.push(newItem);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-        return newItem;
-    }
+    return apiFetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(item),
+    });
 };
 
-// DELETE item
 export const removeFromCart = async (id: string): Promise<CartItem[]> => {
-    const cart = await getCart();
-    const filtered = cart.filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return filtered;
+    await apiFetch(`${API_ENDPOINT}/${id}`, { method: 'DELETE' });
+    return getCart();
 };
 
-// PUT update quantity
 export const updateCartQuantity = async (id: string, action: 'inc' | 'dec' | number): Promise<CartItem> => {
-    const cart = await getCart();
-    const item = cart.find(c => c.id === id);
-    if (!item) throw new Error('Item not found');
-
-    if (action === 'inc') {
-        item.quantity += 1;
-    } else if (action === 'dec') {
-        item.quantity = Math.max(1, item.quantity - 1);
+    let updateData;
+    if (typeof action === 'number') {
+        updateData = { quantity: action };
     } else {
-        item.quantity = Math.max(1, action as number);
+        updateData = { action };
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-    return item;
+    return apiFetch(`${API_ENDPOINT}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updateData),
+    });
 };
 
-// DELETE all
 export const clearCart = async (): Promise<void> => {
-    localStorage.removeItem(STORAGE_KEY);
+    await apiFetch(API_ENDPOINT, { method: 'DELETE' });
 };
 
-// Total count helper
 export const getCartCount = async (): Promise<number> => {
     const cart = await getCart();
     return cart.reduce((sum, item) => sum + item.quantity, 0);

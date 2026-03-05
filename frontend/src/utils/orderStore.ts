@@ -1,7 +1,8 @@
-import { API_URLS } from '../config';
+import API_BASE_URL from '../config';
 
 export interface OrderItem {
     id: string;
+    _id?: string;
     name: string;
     quantity: number;
     price: number;
@@ -10,6 +11,7 @@ export interface OrderItem {
 
 export interface Order {
     id: string;
+    _id?: string;
     customerName: string;
     customerEmail: string;
     items: OrderItem[];
@@ -23,13 +25,26 @@ export interface Order {
     completionImage?: string;
 }
 
-const API_BASE = API_URLS.DASHBOARD.replace('dashboard', 'orders');
+const API_ENDPOINT = `${API_BASE_URL}/api/orders`;
+
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        },
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'API Error' }));
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
 
 export const getOrders = async (): Promise<Order[]> => {
     try {
-        const response = await fetch(API_BASE);
-        if (!response.ok) throw new Error('Failed to fetch orders');
-        return await response.json();
+        return await apiFetch(API_ENDPOINT);
     } catch (error) {
         console.error('Error fetching orders:', error);
         return [];
@@ -38,13 +53,10 @@ export const getOrders = async (): Promise<Order[]> => {
 
 export const updateOrderStatus = async (id: string, status: Order['status']): Promise<Order | null> => {
     try {
-        const response = await fetch(`${API_BASE}/${id}/status`, {
+        const updated = await apiFetch(`${API_ENDPOINT}/${id}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
         });
-        if (!response.ok) throw new Error('Failed to update status');
-        const updated = await response.json();
         window.dispatchEvent(new Event('orders-updated'));
         return updated;
     } catch (error) {
@@ -55,13 +67,10 @@ export const updateOrderStatus = async (id: string, status: Order['status']): Pr
 
 export const assignTechnician = async (id: string, technician: string): Promise<Order | null> => {
     try {
-        const response = await fetch(`${API_BASE}/${id}/assign`, {
+        const updated = await apiFetch(`${API_ENDPOINT}/${id}/assign`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ technician })
         });
-        if (!response.ok) throw new Error('Failed to assign technician');
-        const updated = await response.json();
         window.dispatchEvent(new Event('orders-updated'));
         return updated;
     } catch (error) {
@@ -72,13 +81,10 @@ export const assignTechnician = async (id: string, technician: string): Promise<
 
 export const saveOrderImages = async (orderId: string, startImage?: string, completionImage?: string): Promise<Order | null> => {
     try {
-        const response = await fetch(`${API_BASE}/${orderId}/images`, {
+        const updated = await apiFetch(`${API_ENDPOINT}/${orderId}/images`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ startImage, completionImage })
         });
-        if (!response.ok) throw new Error('Failed to save images');
-        const updated = await response.json();
         window.dispatchEvent(new Event('orders-updated'));
         return updated;
     } catch (error) {
@@ -87,16 +93,37 @@ export const saveOrderImages = async (orderId: string, startImage?: string, comp
     }
 };
 
-// Compatibility export (not needed for backend but kept if used as mock elsewhere)
 export const createOrder = async (orderData: Partial<Order>): Promise<Order | null> => {
-    console.warn('createOrder is not yet implemented on backend', orderData);
-    return null;
+    try {
+        return await apiFetch(API_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify(orderData)
+        });
+    } catch (error) {
+        console.error('Error creating order:', error);
+        return null;
+    }
 };
+
 export const updateOrderPaymentStatus = async (id: string, paymentStatus: Order['paymentStatus']): Promise<Order | null> => {
-    console.warn('updateOrderPaymentStatus is not yet implemented on backend', { id, paymentStatus });
-    return null;
+    try {
+        return await apiFetch(`${API_ENDPOINT}/${id}/payment-status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ paymentStatus })
+        });
+    } catch (error) {
+        console.error('Error updating payment status:', error);
+        return null;
+    }
 };
+
 export const refundOrder = async (id: string): Promise<Order | null> => {
-    console.warn('refundOrder is not yet implemented on backend', { id });
-    return null;
+    try {
+        return await apiFetch(`${API_ENDPOINT}/${id}/refund`, {
+            method: 'POST'
+        });
+    } catch (error) {
+        console.error('Error refunding order:', error);
+        return null;
+    }
 };

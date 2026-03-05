@@ -1,59 +1,57 @@
-const STORAGE_KEY = 'cctv_customers';
+import API_BASE_URL from '../config';
 
 export interface RegisteredCustomer {
     id: string;
+    _id?: string;
     name: string;
     mobile: string;
     email: string;
-    registeredAt: string; // ISO string
+    registeredAt: string;
     status: 'Active' | 'Inactive';
     address?: string;
 }
 
-// Initialize with a dummy customer if empty
-const initializeStore = () => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-        const dummyData: RegisteredCustomer[] = [
-            {
-                id: 'CUST-001',
-                name: 'Test Customer',
-                mobile: '6379068723',
-                email: 'customer@cctvpro.in',
-                registeredAt: new Date().toISOString(),
-                status: 'Active'
-            }
-        ];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dummyData));
+const API_ENDPOINT = `${API_BASE_URL}/api/customers`;
+
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        },
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'API Error' }));
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
     }
+    return response.json();
 };
 
 export const getCustomers = async (): Promise<RegisteredCustomer[]> => {
-    initializeStore();
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    return apiFetch(API_ENDPOINT);
+};
+
+export const getCustomerById = async (id: string): Promise<RegisteredCustomer> => {
+    return apiFetch(`${API_ENDPOINT}/${id}`);
 };
 
 export const addCustomer = async (customer: Omit<RegisteredCustomer, 'id' | 'registeredAt' | 'status'>): Promise<RegisteredCustomer> => {
-    const customers = await getCustomers();
+    return apiFetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(customer),
+    });
+};
 
-    // Check if mobile or email already exists
-    if (customers.some(c => c.mobile === customer.mobile)) {
-        throw new Error('This mobile number is already registered.');
-    }
-    if (customers.some(c => c.email.toLowerCase() === customer.email.toLowerCase())) {
-        throw new Error('This email is already registered.');
-    }
+export const updateCustomer = async (id: string, updates: Partial<RegisteredCustomer>): Promise<RegisteredCustomer> => {
+    return apiFetch(`${API_ENDPOINT}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+    });
+};
 
-    const newCustomer: RegisteredCustomer = {
-        ...customer,
-        id: `CUST-${String(customers.length + 1).padStart(3, '0')}`,
-        registeredAt: new Date().toISOString(),
-        status: 'Active'
-    };
-
-    customers.push(newCustomer);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
-    return newCustomer;
+export const deleteCustomer = async (id: string): Promise<void> => {
+    await apiFetch(`${API_ENDPOINT}/${id}`, { method: 'DELETE' });
 };
 
 export const emailExists = async (email: string): Promise<boolean> => {

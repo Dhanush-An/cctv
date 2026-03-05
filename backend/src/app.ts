@@ -8,6 +8,12 @@ import customerRoutes from './routes/customers.js';
 import orderRoutes from './routes/orders.js';
 import authRoutes from './routes/auth.js';
 import employeeRoutes from './routes/employees.js';
+import branchRoutes from './routes/branches.js';
+import contactRoutes from './routes/contacts.js';
+import reviewRoutes from './routes/reviews.js';
+import wishlistRoutes from './routes/wishlist.js';
+import notificationRoutes from './routes/notifications.js';
+import systemRoutes from './routes/system.js';
 
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
@@ -31,6 +37,12 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/system', systemRoutes);
 
 // ─── Dashboard (static summary) ───────────────────────────────────────────────
 app.get('/api/dashboard', (_req: Request, res: Response) => {

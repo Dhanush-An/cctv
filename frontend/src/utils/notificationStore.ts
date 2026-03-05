@@ -1,6 +1,8 @@
+import API_BASE_URL from '../config';
 
 export interface Notification {
     id: string;
+    _id?: string;
     userId: string;
     message: string;
     date: string;
@@ -8,107 +10,55 @@ export interface Notification {
     type: 'Order' | 'Payment' | 'Review' | 'System';
 }
 
-const STORAGE_KEY = 'cctv_notifications';
+const API_ENDPOINT = `${API_BASE_URL}/api/notifications`;
 
-const getStorageNotifications = (): Notification[] => {
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        },
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'API Error' }));
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
+export const addNotification = async (notification: Omit<Notification, 'id' | 'date' | 'read'>): Promise<Notification> => {
+    const newNotification = await apiFetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(notification),
+    });
+    window.dispatchEvent(new Event('notifications-updated'));
+    return newNotification;
+};
+
+export const getNotifications = async (userId: string): Promise<Notification[]> => {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch {
+        return await apiFetch(`${API_ENDPOINT}?userId=${userId}`);
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
         return [];
     }
 };
 
-const setStorageNotifications = (notifications: Notification[]) => {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
-        // Notify other tabs/components
-        window.dispatchEvent(new Event('notifications-updated'));
-    } catch (error) {
-        console.error('Error saving notifications:', error);
-    }
-};
-
-export const addNotification = async (notification: Omit<Notification, 'id' | 'date' | 'read'>): Promise<Notification> => {
-    const notifications = getStorageNotifications();
-    const newNotification: Notification = {
-        ...notification,
-        id: `NTF-${Math.floor(1000 + Math.random() * 9000)}`,
-        date: new Date().toISOString(),
-        read: false
-    };
-
-    setStorageNotifications([newNotification, ...notifications]);
-    return newNotification;
-};
-
-// Initialize with sample notifications if empty
-if (!localStorage.getItem(STORAGE_KEY)) {
-    const samples: Notification[] = [
-        {
-            id: 'NTF-1111',
-            userId: 'admin',
-            message: 'New technician registration pending approval.',
-            type: 'System',
-            date: new Date().toISOString(),
-            read: false
-        },
-        {
-            id: 'NTF-2222',
-            userId: '6379068722', // Rajesh Kumar
-            message: 'You have a new job assigned: Security System Maintenance.',
-            type: 'Order',
-            date: new Date().toISOString(),
-            read: false
-        },
-        {
-            id: 'NTF-3333',
-            userId: 'admin',
-            message: 'Monthly revenue report is ready for review.',
-            type: 'System',
-            date: new Date().toISOString(),
-            read: true
-        },
-        {
-            id: 'NTF-4444',
-            userId: 'customer@demo.com',
-            message: 'Your order #ORD-75923 has been delivered successfully!',
-            type: 'Order',
-            date: new Date().toISOString(),
-            read: false
-        },
-        {
-            id: 'NTF-5555',
-            userId: 'customer@demo.com',
-            message: 'A technician has been assigned to your request.',
-            type: 'System',
-            date: new Date().toISOString(),
-            read: true
-        }
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
-}
-
-export const getNotifications = async (userId: string): Promise<Notification[]> => {
-    const notifications = getStorageNotifications();
-    return notifications.filter(n => n.userId.toLowerCase() === userId.toLowerCase());
-};
-
 export const markAsRead = async (id: string): Promise<void> => {
-    const notifications = getStorageNotifications();
-    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-    setStorageNotifications(updated);
+    await apiFetch(`${API_ENDPOINT}/${id}/read`, { method: 'PATCH' });
+    window.dispatchEvent(new Event('notifications-updated'));
 };
 
 export const markAllAsRead = async (userId: string): Promise<void> => {
-    const notifications = getStorageNotifications();
-    const updated = notifications.map(n =>
-        n.userId.toLowerCase() === userId.toLowerCase() ? { ...n, read: true } : n
-    );
-    setStorageNotifications(updated);
+    await apiFetch(`${API_ENDPOINT}/read-all`, {
+        method: 'POST',
+        body: JSON.stringify({ userId }),
+    });
+    window.dispatchEvent(new Event('notifications-updated'));
 };
 
 export const deleteNotification = async (id: string): Promise<void> => {
-    const notifications = getStorageNotifications();
-    setStorageNotifications(notifications.filter(n => n.id !== id));
+    await apiFetch(`${API_ENDPOINT}/${id}`, { method: 'DELETE' });
+    window.dispatchEvent(new Event('notifications-updated'));
 };
