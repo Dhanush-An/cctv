@@ -1,72 +1,89 @@
-import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { db } from '../models/data.js';
-import type { Order, OrderItem } from '../models/data.js';
+import Order from '../models/Order.js';
 
-export const getOrders = (req: Request, res: Response) => {
-    res.json(db.orders);
-};
-
-export const createOrder = (req: Request, res: Response) => {
-    const { customerName, customerEmail, items, total, type } = req.body;
-
-    // Generate a simple ID
-    const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newOrder: Order = {
-        id: newId,
-        customerName: customerName || 'Anonymous',
-        customerEmail: customerEmail || 'unknown@example.com',
-        items: items || [],
-        total: total || 0,
-        status: 'Pending',
-        date: new Date().toLocaleString('en-US', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', hour12: true
-        }),
-        paymentStatus: 'Paid',
-        type: type || 'Product'
-    };
-
-    db.orders.push(newOrder);
-    res.status(201).json(newOrder);
-};
-
-export const updateOrderStatus = (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const order = db.orders.find(o => o.id === id);
-    if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+export const getOrders = async (req: Request, res: Response) => {
+    try {
+        const orders = await Order.find();
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch orders' });
     }
-
-    order.status = status;
-    res.json(order);
 };
 
-export const assignTechnician = (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { technician } = req.body;
+export const createOrder = async (req: Request, res: Response) => {
+    try {
+        const { customerName, customerEmail, items, total, type, paymentStatus } = req.body;
 
-    const order = db.orders.find(o => o.id === id);
-    if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        const newOrder = new Order({
+            id: newId,
+            customerName: customerName || 'Anonymous',
+            customerEmail: customerEmail || 'unknown@example.com',
+            items: items || [],
+            total: total || 0,
+            status: 'Pending',
+            date: new Date().toLocaleString('en-US', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: true
+            }),
+            paymentStatus: paymentStatus || 'Paid',
+            type: type || 'Product'
+        });
+
+        await newOrder.save();
+        res.status(201).json(newOrder);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create order' });
     }
-
-    order.technician = technician;
-    res.json(order);
 };
 
-export const refundOrder = (req: Request, res: Response) => {
-    const { id } = req.params;
+export const updateOrderStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
 
-    const order = db.orders.find(o => o.id === id);
-    if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        const updatedOrder = await Order.findOneAndUpdate(
+            { id } as any,
+            { status },
+            { new: true }
+        );
+        if (!updatedOrder) return res.status(404).json({ message: 'Order not found' });
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update order status' });
     }
+};
 
-    order.status = 'Refunded';
-    order.paymentStatus = 'Refunded';
-    res.json(order);
+export const assignTechnician = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { technician } = req.body;
+
+        const updatedOrder = await Order.findOneAndUpdate(
+            { id } as any,
+            { technician },
+            { new: true }
+        );
+        if (!updatedOrder) return res.status(404).json({ message: 'Order not found' });
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to assign technician' });
+    }
+};
+
+export const refundOrder = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const updatedOrder = await Order.findOneAndUpdate(
+            { id } as any,
+            { status: 'Refunded', paymentStatus: 'Refunded' },
+            { new: true }
+        );
+        if (!updatedOrder) return res.status(404).json({ message: 'Order not found' });
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to refund order' });
+    }
 };

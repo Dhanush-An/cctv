@@ -1,59 +1,66 @@
 import type { Request, Response } from 'express';
-import { db } from '../models/data.js';
-import type { Employee } from '../models/data.js';
+import Employee from '../models/Employee.js';
 
 export const getEmployees = async (_req: Request, res: Response) => {
-    res.json(db.employees);
+    try {
+        const employees = await Employee.find();
+        res.json(employees);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch employees' });
+    }
 };
 
 export const createEmployee = async (req: Request, res: Response) => {
-    const employeeData = req.body;
-    const newEmployee: Employee = {
-        ...employeeData,
-        id: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
-        status: 'Active'
-    };
-    db.employees.push(newEmployee);
-    res.status(201).json(newEmployee);
+    try {
+        const employeeData = req.body;
+        const newEmployee = new Employee({
+            ...employeeData,
+            id: employeeData.id || `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+            status: 'Active'
+        });
+        await newEmployee.save();
+        res.status(201).json(newEmployee);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create employee' });
+    }
 };
 
 export const updateEmployee = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const updates = req.body;
-    const index = db.employees.findIndex(emp => emp.id === id);
-    if (index === -1) return res.status(404).json({ message: 'Employee not found' });
-
-    const employee = db.employees[index];
-    if (!employee) return res.status(404).json({ message: 'Employee not found' });
-
-    const updatedEmployee = { ...employee, ...updates };
-    db.employees.splice(index, 1, updatedEmployee);
-    res.json(updatedEmployee);
+    try {
+        const { id } = req.params;
+        const updatedEmployee = await Employee.findOneAndUpdate({ id } as any, req.body, { new: true });
+        if (!updatedEmployee) return res.status(404).json({ message: 'Employee not found' });
+        res.json(updatedEmployee);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update employee' });
+    }
 };
 
 export const deleteEmployee = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const index = db.employees.findIndex(emp => emp.id === id);
-    if (index === -1) return res.status(404).json({ message: 'Employee not found' });
-
-    db.employees.splice(index, 1);
-    res.json({ message: 'Employee deleted' });
+    try {
+        const { id } = req.params;
+        const deleted = await Employee.findOneAndDelete({ id } as any);
+        if (!deleted) return res.status(404).json({ message: 'Employee not found' });
+        res.json({ message: 'Employee deleted' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete employee' });
+    }
 };
 
 export const toggleEmployeeStatus = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const index = db.employees.findIndex(emp => emp.id === id);
-    if (index === -1) return res.status(404).json({ message: 'Employee not found' });
+    try {
+        const { id } = req.params;
+        const employee = await Employee.findOne({ id } as any);
+        if (!employee) return res.status(404).json({ message: 'Employee not found' });
 
-    const employee = db.employees[index];
-    if (!employee) return res.status(404).json({ message: 'Employee not found' });
-
-    const updatedEmployee = {
-        ...employee,
-        status: (employee.status === 'Active' ? 'Inactive' : 'Active') as 'Active' | 'Inactive'
-    };
-
-    // Use splice to trigger the Proxy's save logic
-    db.employees.splice(index, 1, updatedEmployee);
-    res.json(updatedEmployee);
+        const newStatus = employee.status === 'Active' ? 'Inactive' : 'Active';
+        const updatedEmployee = await Employee.findOneAndUpdate(
+            { id } as any,
+            { status: newStatus },
+            { new: true }
+        );
+        res.json(updatedEmployee);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to toggle status' });
+    }
 };

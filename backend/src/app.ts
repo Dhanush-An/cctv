@@ -9,8 +9,16 @@ import orderRoutes from './routes/orders.js';
 import authRoutes from './routes/auth.js';
 import employeeRoutes from './routes/employees.js';
 
+import dotenv from 'dotenv';
+import { connectDB } from './config/db.js';
+
+dotenv.config();
+
 const app = express();
 const port = process.env['PORT'] ?? 5000;
+
+// Connect to Database
+connectDB();
 
 app.use(cors());
 app.use(express.json());
