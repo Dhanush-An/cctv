@@ -15,6 +15,10 @@ import wishlistRoutes from './routes/wishlist.js';
 import notificationRoutes from './routes/notifications.js';
 import systemRoutes from './routes/system.js';
 
+import Order from './models/Order.js';
+import Customer from './models/Customer.js';
+import Employee from './models/Employee.js';
+
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
@@ -45,29 +49,62 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/system', systemRoutes);
 
-// ─── Dashboard (static summary) ───────────────────────────────────────────────
-app.get('/api/dashboard', (_req: Request, res: Response) => {
-    res.json({
-        stats: [
-            { title: 'Total Sales', value: '$45,320', icon: 'DollarSign', trend: '+15.4%' },
-            { title: 'Bookings', value: '320', icon: 'Calendar', trend: '+8.2%' },
-            { title: 'Customers', value: '1,250', icon: 'Users', trend: '+12.5%' },
-            { title: 'Employees', value: '28', icon: 'HardHat', trend: '0%' },
-        ],
-        earnings: { monthly: '$12,540', trend: '+15.4%' },
-        recentOrders: [
-            { id: '#1023', product: 'Canon EOS R5', client: 'John Doe', amount: '$1,200', status: 'Pending' },
-            { id: '#1022', product: 'CCTV Installation', client: 'Sarah Lee', amount: '$350', status: 'Completed' },
-            { id: '#1021', product: 'Hikvision Camera', client: 'Mark Smith', amount: '$400', status: 'Shipped' },
-            { id: '#1020', product: 'Dahua DVR', client: 'Emma Watson', amount: '$280', status: 'Processing' },
-        ],
-        serviceBookings: [
-            { label: 'CCTV Installation', status: 'Scheduled for Today', person: 'Michael Brown' },
-            { label: 'Camera Repair', status: 'In Progress', person: 'Lisa Kim' },
-            { label: 'Full CCTV Setup', status: 'Completed', person: 'David Johnson' },
-            { label: 'Maintenance Visit', status: 'Upcoming', person: 'Kevin Patel' },
-        ],
-    });
+// ─── Dashboard (dynamic summary) ──────────────────────────────────────────────
+app.get('/api/dashboard', async (_req: Request, res: Response) => {
+    try {
+        const [orders, customersCount, employeesCount] = await Promise.all([
+            Order.find(),
+            Customer.countDocuments(),
+            Employee.countDocuments()
+        ]);
+
+        const completedOrders = orders.filter(o => o.status === 'Delivered');
+        const totalSales = completedOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+
+        // Calculate trend (mock for now as we don't have historical snapshots easily without more complex aggregation)
+        // But making the values real.
+
+        const currentMonth = new Date().getMonth();
+        const earningsThisMonth = completedOrders
+            .filter(order => new Date(order.date).getMonth() === currentMonth)
+            .reduce((sum, order) => sum + (order.total || 0), 0);
+
+        const recentOrders = orders
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 4)
+            .map(order => ({
+                id: order.id,
+                product: order.items.map(i => i.name).join(', ').substring(0, 25) + (order.items.map(i => i.name).join(', ').length > 25 ? '...' : ''),
+                client: order.customerName || 'Guest',
+                amount: `₹${order.total}`,
+                status: order.status
+            }));
+
+        const serviceBookings = orders
+            .filter(o => o.type === 'Service' || o.type === 'Mixed')
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 4)
+            .map(booking => ({
+                label: booking.items[0]?.name || 'Service',
+                status: booking.status === 'Shipped' ? 'In Progress' : booking.status,
+                person: booking.technician || 'Unassigned'
+            }));
+
+        res.json({
+            stats: [
+                { title: 'Total Sales', value: `₹${totalSales.toLocaleString()}`, icon: 'DollarSign', trend: '+12%' },
+                { title: 'Bookings', value: orders.filter(o => o.type === 'Service' || o.type === 'Mixed').length.toString(), icon: 'Calendar', trend: '+5%' },
+                { title: 'Customers', value: customersCount.toString(), icon: 'Users', trend: '+10%' },
+                { title: 'Employees', value: employeesCount.toString(), icon: 'HardHat', trend: '0%' },
+            ],
+            earnings: { monthly: `₹${earningsThisMonth.toLocaleString()}`, trend: '+15.4%' },
+            recentOrders,
+            serviceBookings,
+        });
+    } catch (error) {
+        console.error('Dashboard Error:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    }
 });
 
 app.get('/', (_req: Request, res: Response) => {

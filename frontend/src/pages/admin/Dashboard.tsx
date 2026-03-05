@@ -9,17 +9,26 @@ import { getOrders, type Order } from '../../utils/orderStore';
 import { getEmployees, type Employee } from '../../utils/employeeStore';
 import { getContactMessages, type ContactMessage } from '../../utils/contactStore';
 import { getCustomers, type RegisteredCustomer } from '../../utils/customerStore';
+import API_BASE_URL from '../../config';
 
 const Dashboard = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [messages, setMessages] = useState<ContactMessage[]>([]);
     const [customers, setCustomers] = useState<RegisteredCustomer[]>([]);
+    const [dashboardData, setDashboardData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const response = await fetch(`${API_BASE_URL}/api/dashboard`);
+                if (!response.ok) throw new Error('Failed to fetch dashboard summary');
+                const data = await response.json();
+                setDashboardData(data);
+
+                // Keep these for detailed lists if needed, or if we want to stick to the previous state structure
+                // But let's prioritize the new dashboardData
                 const [ordersData, employeesData, messagesData, customersData] = await Promise.all([
                     getOrders(),
                     Promise.resolve(getEmployees()),
@@ -141,28 +150,28 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Sales"
-                    value={`₹${totalSales.toLocaleString()}`}
+                    value={dashboardData?.stats[0]?.value || `₹${totalSales.toLocaleString()}`}
                     icon={DollarSign}
                     iconBg="bg-emerald-50 text-emerald-600"
                     iconColor="text-emerald-600"
                 />
                 <StatCard
                     title="Bookings"
-                    value={totalBookings.toString()}
+                    value={dashboardData?.stats[1]?.value || totalBookings.toString()}
                     icon={Calendar}
                     iconBg="bg-indigo-50 text-indigo-600"
                     iconColor="text-indigo-600"
                 />
                 <StatCard
                     title="Customers"
-                    value={uniqueCustomers.toString()}
+                    value={dashboardData?.stats[2]?.value || uniqueCustomers.toString()}
                     icon={Users}
                     iconBg="bg-sky-50 text-sky-600"
                     iconColor="text-sky-600"
                 />
                 <StatCard
                     title="Employees"
-                    value={totalEmployees.toString()}
+                    value={dashboardData?.stats[3]?.value || totalEmployees.toString()}
                     icon={HardHat}
                     iconBg="bg-slate-50 text-slate-600"
                     iconColor="text-slate-600"
@@ -180,7 +189,7 @@ const Dashboard = () => {
                         <span className="p-2 bg-slate-50 rounded-lg"><TrendingUp className="w-4 h-4 text-emerald-500" /></span>
                     </div>
                     <div className="mb-4">
-                        <h2 className="text-4xl font-bold text-slate-800">₹{earningsThisMonth.toLocaleString()}</h2>
+                        <h2 className="text-4xl font-bold text-slate-800">{dashboardData?.earnings?.monthly || `₹${earningsThisMonth.toLocaleString()}`}</h2>
                         <p className="text-sm font-medium text-slate-500 flex items-center gap-1 mt-2">
                             Current Month
                         </p>
