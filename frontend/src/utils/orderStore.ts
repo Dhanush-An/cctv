@@ -1,3 +1,4 @@
+import { getAuthHeaders } from './apiHelper';
 import API_BASE_URL from '../config';
 
 export interface OrderItem {
@@ -32,6 +33,7 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
             ...(options.headers || {}),
         },
     });
@@ -96,7 +98,10 @@ export const saveOrderImages = async (orderId: string, startImage?: string, comp
 export const createOrder = async (orderData: Partial<Order>): Promise<Order> => {
     const response = await fetch(API_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
         body: JSON.stringify(orderData)
     });
     if (!response.ok) {

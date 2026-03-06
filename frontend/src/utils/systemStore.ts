@@ -1,3 +1,4 @@
+import { getAuthHeaders } from './apiHelper';
 import API_BASE_URL from '../config';
 
 export interface SystemCredentials {
@@ -18,6 +19,7 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
             ...(options.headers || {}),
         },
     });

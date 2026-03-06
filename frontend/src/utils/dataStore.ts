@@ -44,12 +44,15 @@ export const notifySync = (type: 'products' | 'bookings' | 'services') => {
     window.dispatchEvent(new Event(`${type}-updated`));
 };
 
+import { getAuthHeaders } from './apiHelper';
+
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
             ...(options.headers || {}),
         },
     });
