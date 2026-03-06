@@ -123,5 +123,5 @@ app.get("/test-db", async (req: Request, res: Response) => {
 });
 
 app.listen(port, () => {
-    console.log(`✅ Server running on https://cctv-caro.onrender.com`);
+    console.log(`✅ Server running on http://localhost:${port}`);
 });
