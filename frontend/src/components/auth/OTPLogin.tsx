@@ -52,11 +52,18 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
                 body: JSON.stringify({ mobile, otp })
             });
 
+            // Safely parse JSON - backend may return HTML if it's still waking up
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                setError('Server is starting up, please wait 10-15 seconds and try again.');
+                setLoading(false);
+                return;
+            }
+
             const data = await response.json();
             setLoading(false);
 
             if (data.success) {
-                // Pass the token to the parent callback
                 onLoginSuccess(mobile, data.user.role, data.token);
             } else {
                 setError(data.message || 'Invalid OTP. Please try again.');
@@ -64,7 +71,12 @@ const OTPLogin = ({ onLoginSuccess }: OTPLoginProps) => {
         } catch (err: any) {
             setLoading(false);
             console.error('[OTPLogin] Fetch error:', err);
-            setError(`Connection error: ${err.message || 'Check your internet or API URL'}`);
+            // Check if this is a JSON parse error (backend returning HTML)
+            if (err.message && (err.message.includes('DOCTYPE') || err.message.includes('JSON'))) {
+                setError('Server is starting up, please wait 10-15 seconds and try again.');
+            } else {
+                setError(`Connection error: ${err.message || 'Check your internet connection'}`);
+            }
         }
     };
 
