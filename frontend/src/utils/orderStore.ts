@@ -93,16 +93,19 @@ export const saveOrderImages = async (orderId: string, startImage?: string, comp
     }
 };
 
-export const createOrder = async (orderData: Partial<Order>): Promise<Order | null> => {
-    try {
-        return await apiFetch(API_ENDPOINT, {
-            method: 'POST',
-            body: JSON.stringify(orderData)
-        });
-    } catch (error) {
-        console.error('Error creating order:', error);
-        return null;
+export const createOrder = async (orderData: Partial<Order>): Promise<Order> => {
+    const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(err.error || `HTTP ${response.status}`);
     }
+    const result = await response.json();
+    window.dispatchEvent(new Event('orders-updated'));
+    return result;
 };
 
 export const updateOrderPaymentStatus = async (id: string, paymentStatus: Order['paymentStatus']): Promise<Order | null> => {

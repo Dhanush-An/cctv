@@ -101,26 +101,22 @@ const CartPage = () => {
                 technician: assignedTechnician
             });
 
-            if (order) {
-                // Non-blocking - don't let notification failure cancel checkout
-                const orderId = order.id || (order as any)._id || 'new';
-                addNotification({
-                    userId: user || 'customer@demo.com',
-                    message: `Order #${String(orderId).slice(-4)} placed successfully!`,
-                    type: 'Order'
-                }).catch(err => console.warn('Notification failed (non-critical):', err));
+            // Non-blocking - don't let notification failure cancel checkout
+            const orderId = order.id || (order as any)._id || 'new';
+            addNotification({
+                userId: user || 'customer@demo.com',
+                message: `Order #${String(orderId).slice(-4)} placed successfully!`,
+                type: 'Order'
+            }).catch(err => console.warn('Notification failed (non-critical):', err));
 
-                // Clear cart - also non-blocking
-                clearCart().catch(err => console.warn('Clear cart failed (non-critical):', err));
+            // Clear cart - also non-blocking
+            clearCart().catch(err => console.warn('Clear cart failed (non-critical):', err));
 
-                setItems([]);
-                setShowSuccess(true);
-            } else {
-                alert('Failed to place order. Please try again.');
-            }
+            setItems([]);
+            setShowSuccess(true);
         } catch (error) {
             console.error('Error placing order:', error);
-            alert('Failed to place order. Please try again.');
+            alert(`Failed to place order: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setPlacingOrder(false);
         }
