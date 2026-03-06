@@ -20,11 +20,11 @@ const Settings = () => {
         const loadData = async () => {
             const empData = await getEmployees();
             setEmployees(empData);
-            setSystemCreds(getSystemCredentials());
+            setSystemCreds(await getSystemCredentials());
         };
         loadData();
 
-        const handler = () => setSystemCreds(getSystemCredentials());
+        const handler = async () => setSystemCreds(await getSystemCredentials());
         window.addEventListener('system-credentials-updated', handler);
         return () => window.removeEventListener('system-credentials-updated', handler);
     }, []);
