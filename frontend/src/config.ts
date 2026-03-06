@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://cctv-ybgd.onrender.com";
 
 // Helpful for debugging data mismatch issues across environments
 if (import.meta.env.DEV) {
